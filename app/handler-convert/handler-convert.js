@@ -1,6 +1,6 @@
 const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
-const { getFile } = require('../handler-files/s3functions');
+const { getFile, putPromise } = require('../handler-files/s3functions');
 const { makeDetails, makeManual, makeFirstLast, objFromArr } = require('./convert-helpers');
 const { validate } = require('../handler-config/config-helpers');
 const { privateBucket } = require('../SECRETS');
@@ -18,12 +18,12 @@ exports.convertHandler = function (event) {
 const convertSwitchHandler = (event) => {
     const pathParams = event.path.split('/');
     const accountID = pathParams[2];
-    const filename = accountID + '/' + event.body.config;
+    const configFilename = accountID + '/' + event.body.config;
 
     switch (event.httpMethod) {
         case 'POST':
             if (!event.body) return response(403, 'bad request');
-            return getFile(filename, privateBucket)
+            return getFile(configFilename, privateBucket)
                 .then(config => {
                     if (Array.isArray(config)) throw new Error('missing config file');
                     if (validate(config).length > 0) throw new Error('invalid config');
@@ -33,11 +33,11 @@ const convertSwitchHandler = (event) => {
                     if (typeof event.body.csv_content === 'string') {
                         const separator = config.separator || ';'
                         var arr = event.body.csv_content.split('\r');
-                        if (!arr[arr.length-1]) arr = arr.slice(0,-1);
+                        if (!arr[arr.length - 1]) arr = arr.slice(0, -1);
                         if (arr.length < 2) throw new Error('csv content invalid');
                         csvArr = arr.map(it => {
                             var row = it.split(separator);
-                            if (!row[row.length-1]) row = row.slice(0,-1);
+                            if (!row[row.length - 1]) row = row.slice(0, -1);
                         });
                     }
                     console.log(1);
@@ -47,13 +47,26 @@ const convertSwitchHandler = (event) => {
                     console.log(3);
                     const firstLastFields = makeFirstLast(config, csvArr);
                     console.log(4);
-                    const details = {'financial_mutations_attributes': objFromArr(detailsArr) };
+                    const details = { 'financial_mutations_attributes': objFromArr(detailsArr) };
                     const outObj = Object.assign({},
                         { financial_account_id: accountID },
                         manualFields,
                         firstLastFields,
                         details);
-                    return response(200, { financial_statement : outObj });
+                    const newConfig = patchObj(config, { validated: true })
+                    const configSave = {
+                        Bucket: privateBucket,
+                        Key: configFilename,
+                        Body: JSON.stringify(newConfig),
+                        ContentType: 'application/json'
+                    }
+                    return Promise.all([
+                        putPromise(configSave),
+                        { financial_statement: outObj }
+                    ])
+                })
+                .then(dataList => {
+                    return response(200, dataList[1]);
                 })
                 .catch(err => response(500, err.message));
 
