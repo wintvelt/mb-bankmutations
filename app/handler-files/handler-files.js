@@ -1,9 +1,9 @@
 // Read and write files and folders on S3
 const { privateBucket } = require('../SECRETS');
-const { checkAccount } = require('../helpers/helpers');
+const { checkAccount, patchObj } = require('../helpers/helpers');
 const { getPromise, putPromise, deletePromise, listPromise } = require('./s3functions');
 const { filterFiles } = require('./helpers-files');
-const { response, patchObj } = require('../helpers/helpers-api');
+const { response } = require('../helpers/helpers-api');
 
 exports.fileHandler = function (event) {
     const auth = event.headers.Authorization;
@@ -14,24 +14,24 @@ exports.fileHandler = function (event) {
         .catch(err => response(403, err.message))
 }
 
-const filesSwitchHandler = function(event) {
+const filesSwitchHandler = function (event) {
     const pathParams = event.path.split('/');
 
     switch (event.httpMethod) {
         case 'GET':
             if (pathParams.length === 4) {
-                const filename = pathParams[2]+'/'+pathParams[3];
+                const filename = pathParams[2] + '/' + pathParams[3];
                 console.log(filename);
                 const getParams = {
                     Bucket: privateBucket,
                     Key: filename
                 }
                 return getPromise(getParams)
-                .then(data => {
-                    console.log(typeof data);
-                    return response(200, data);
-                })
-                .catch(err => response(500, 'file not found'));
+                    .then(data => {
+                        console.log(typeof data);
+                        return response(200, data);
+                    })
+                    .catch(err => response(500, 'file not found'));
             }
             if (pathParams.length === 3) {
                 const account = pathParams[2];
@@ -40,19 +40,20 @@ const filesSwitchHandler = function(event) {
                 }
                 const summaryParams = {
                     Bucket: privateBucket,
-                    Key: account +'/summary-'+ account +'.json'
+                    Key: account + '/summary-' + account + '.json'
                 }
                 return Promise.all([
                     listPromise(listParams),
                     getPromise(summaryParams).catch(() => 'not found')
                 ])
-                .then(dataList => {
-                    const rawList = filterFiles(dataList[0], account);
-                    const summaries = dataList[1];
-                    if (summaries === 'not found') return response(200, rawList);
-                    return response(200, patchObj(rawList, summaries, "filename"));
-                })
-                .catch(err => response(500, 'server error'));
+                    .then(dataList => {
+                        const rawList = filterFiles(dataList[0], account);
+                        const summaries = dataList[1];
+                        console.log(typeof summaries, typeof rawList);
+                        if (summaries === 'not found') return response(200, rawList);
+                        return response(200, patchObj(rawList, summaries, "filename"));
+                    })
+                    .catch(err => response(500, 'server error'));
             }
             return response(403, 'invalid path');
 
@@ -86,6 +87,9 @@ const filesSwitchHandler = function(event) {
             return deletePromise(delParams)
                 .then(data => response(200, data))
                 .catch(err => response(500, 'could not delete file'));
+
+        case 'OPTIONS':
+            return response(200, 'ok');
 
         default:
             return response(405, 'not allowed');

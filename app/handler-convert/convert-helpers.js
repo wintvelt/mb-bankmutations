@@ -126,9 +126,10 @@ const makeFirstLast = (config, csvArr) => {
 
 // very basic helpers
 const initCaps = (str) => {
-    return str.toLowerCase().replace(/(?:^|[\s,\-,\/])[a-z]|[a-z]+(?:[0-9])|(?:[0-9])[a-z]+/g, function (m) {
-        return m.toUpperCase();
-    });
+    const upper = (m) => m.toUpperCase();
+    return str.toLowerCase()
+        .replace(/moneybird|\b([a-z]{2}[0-9]{2}(\s[a-z,0-9]{4}){1,2})\b/g, upper)
+        .replace(/(?:^|[\s,\-,\/])[a-z]/g, upper);
 }
 
 const getDate = (str, format) => {

@@ -33,6 +33,11 @@ Resources:
           Properties:
             Path: /convert/{path}
             Method: any
+        Send:
+          Type: Api
+          Properties:
+            Path: /send/{path}
+            Method: any
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -47,6 +52,9 @@ Outputs:
   ConvertApi:
     Description: "API Gateway endpoint URL for Convert function of Bank"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/convert/"
+  SendApi:
+    Description: "API Gateway endpoint URL for Send function of Bank"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/Send/"
   BankFunction:
     Description: "Bank Lambda Function ARN"
     Value: !GetAtt BankFunction.Arn

@@ -56,6 +56,25 @@ const retrieveSingleMoneyData = function (path, auth, data = []) {
     return fetch(options);
 }
 
+exports.postMoneyData = function (path, auth, data = []) {
+    const fullpath = '/api/v2/' + adminCode + path;
+    const body = (typeof data === 'string')? data : JSON.stringify(data);
+    const options = {
+        hostname: base_url,
+        path: fullpath,
+        method: 'POST',
+        // mode: "cors",
+        cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+        headers: {
+            Authorization: auth,
+            "Content-Type": "application/json",
+            "Content-Length": body.length
+        },
+        body: body
+    };
+    return fetch(options);
+}
+
 // make list of lists
 function makeLOL(array, size = 100, outArr = []) {
     if (array.length <= size) return [...outArr, array]

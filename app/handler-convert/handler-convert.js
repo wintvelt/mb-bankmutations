@@ -53,7 +53,7 @@ const convertSwitchHandler = (event) => {
                         manualFields,
                         firstLastFields,
                         details);
-                    return response(200, outObj);
+                    return response(200, { financial_statement : outObj });
                 })
                 .catch(err => response(500, err.message));
 

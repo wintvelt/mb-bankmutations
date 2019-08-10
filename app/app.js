@@ -2,6 +2,7 @@
 const { fileHandler } = require('./handler-files/handler-files');
 const { configHandler } = require('./handler-config/handler-config');
 const { convertHandler } = require('./handler-convert/handler-convert');
+const { sendHandler } = require('./handler-send/handler-send');
 const { response } = require('./helpers/helpers-api');
 const { accessToken } = require('./SECRETS');
 
@@ -30,6 +31,10 @@ exports.handler = async function (event) {
 
         case 'convert':
             return convertHandler(newEvent);
+            break;
+
+        case 'send':
+            return sendHandler(newEvent);
             break;
 
         default:

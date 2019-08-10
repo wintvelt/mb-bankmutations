@@ -76,8 +76,8 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     [
         { 
             "filename": "[something].json", // the name used to save the file
-            "create_date": "[date]",
-            "latest_send_date": "20190802", // will be null if never sent
+            "last_modified": "[date]",
+            "last_sent": "20190802", // will be null if never sent
             "send_result_ok": true, // if Moneybird response was OK
             "id": "123456" // moneybird id of the financial statement (to link to)
         }
@@ -95,12 +95,17 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
 * `DELETE` only valid with filename, body should have { filename } too.
 
 `/send`to send a file to moneybird
-* `POST` needs auth Bearer token in header and json in body
+* `POST send/[account id]`
+    * needs auth Bearer token in header and json in body
+    * `[account id]` must be valid (will be checked)
     ```json
     {
-        "json": "{ ... }" // the json body (stringified) to send to Moneybird
+        "filename": "...", // if filled will try and get filename from S3 to send to moneybird
+        "json": "{ ... }" // the json body (stringified) to send to Moneybird (only if no filename)
     }
     ```
+    * with response from moneybird, will update `'[account]/summary-account id.json` too, with the date sent, send result and (if OK) the moneybird ID of the statement.
+    * returns the new summaries list (see `GET files/[account]`)
 
 
 ---
@@ -113,9 +118,10 @@ In the private bucket, a folder is made for each account id. In these folders:
     [
         { 
             "filename": "[something].json", // the name used to save the file
-            "create_date": "[date]",
-            "latest_send_date": "20190802", // will be null if never sent
+            "last_modified": "[date]",
+            "last_sent": "20190802", // will be null if never sent
             "send_result_ok": true, // if Moneybird response was OK
+            "id": "123456" // moneybird id of the financial statement (to link to)
         }
     ]
     ```

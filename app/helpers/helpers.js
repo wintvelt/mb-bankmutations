@@ -16,7 +16,7 @@ exports.checkAccount = function (accountID, auth) {
 // works with arrays too
 // if object is (or contains) arrays of objects containing [id] key, then does array update too
 // returns (immutable) updated record
- const patchObj = (original, update, id = 'id') => {
+const patchObj = (original, update, id = 'id') => {
     if (Array.isArray(original) && Array.isArray(update)) { // both are arrays
         if (!original[0] || !original[0][id] || !update[0] || !update[0][id]) return [...update];
         var newArr = [];
@@ -48,4 +48,11 @@ exports.checkAccount = function (accountID, auth) {
     return update;
 }
 
-exports.patchObj = patchObj
+exports.nowDate = () => {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const monthStr = (month < 10) ? '0' + month : month;
+    return now.getFullYear() + '-' + monthStr + '-' + now.getDate();
+}
+
+exports.patchObj = patchObj;
