@@ -29,7 +29,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "separator": ";",
         "decimal": ",",
         "unmapped": [ "credit", "debet" ],  // fields from csv which are not mapped
-        "validated": true // if a conversion with this config went OK
+        "validated": true // if a conversion with this config went OK`
     }
     ```
     * If the file does not (yet) exist, a generic json file without mappings will be returned
