@@ -15,14 +15,14 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "official_date": { "manual" : true, "format": "yyyy-mm-dd" }, // manually set by user
         "official_balance": { "field": "Saldo", "last": true }, // take value from last detail line
         "details": {
-            "date": { "field": "Datum", "format": "dd/mm/yyyy" }, // simple mapping
+            "date": { "field": "Datum", "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // simple mapping
             "valutation_date": "Valuta", // can be string too
-            "message": "Omschrijving",
-            "amount": "123.45",
+            "message": { "field": [ "Tegenpartij", "Omschrijving" ], "beautify": true }, // combine multiple cells
+            "amount": { "field": "Bedrag", "amount": true },
             "code": null, // unassigned
-            "contra_account_name": "123",
-            "contra_account_number": "123",
-            "batch_reference": { "fromMain": true, "key": "reference"}, // default
+            "contra_account_name": "naam tegenrekening",
+            "contra_account_number": "tegenrekening",
+            "batch_reference": { "field": "Omschrijving", "match": "Moneybird", "offset": 10, "length": 12 }, // default
             "offset": null,
             "account_servicer_transaction_id": null
         },
@@ -37,25 +37,32 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * `[account id]` must be a valid Moneybird account id (is checked)
     * request header must contain auth Bearer token
     * request body must contain valid json with new mapping
-    * required fields are
+    * required fields (could be null, but should be included) are
         * in main body: `reference, official_date, details`
         * in details: `date, valutation_date, message, amount`
     * saves the json file in the private bucket
+    * returns the validation of the config (a json list of required field not yet mapped)
+    ```json
+    [ "valutation_date", "amount" ]
+    ```
 * `PATCH /config/[account id]` updates one or more fields in an existing config file
     * `[account id]` must be a valid Moneybird account id (is checked)
     * request header must contain auth Bearer token
     * request body must contain valid json with (partial) new mappings
         * updates can be nested, e.g. to change only one field in details, or only 1 setting in formatted settings
     * saves the json file in the private bucket
+    * returns the validation of the new config file
     * if the original json did not exist, will return an error
 
 `/convert` to convert a csv text file to a Moneybird-readable json file
-* `POST /convert`
+* `POST /convert/[account id]`
+    * `[account id]` must be a valid Moneybird account id (is checked)
+    * request header must contain auth Bearer token
     * body must contain:
     ```json
     {
         "csv_filename": "KBC1213 201907.csv", // name of csv file to convert
-        "csv_text": "datum; valuta; ...\n20190708; EUR;...", // the csv file
+        "csv_content": "datum; valuta; ...\n20190708; EUR;...", // the csv file
         "config": "bank-config-[account id].json", // valid config filename
         "reference": "KBCSCKS", // must include all manual fields from config
         "official_date": "2019-07-27"
@@ -72,6 +79,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
             "create_date": "[date]",
             "latest_send_date": "20190802", // will be null if never sent
             "send_result_ok": true, // if Moneybird response was OK
+            "id": "123456" // moneybird id of the financial statement (to link to)
         }
     ]
     ```

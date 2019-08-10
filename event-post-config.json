@@ -1,43 +1,42 @@
 {
     "body": {
-        "financial_account_id": "123",
-        "reference": {
-            "manual": true
+        "financial_account_id": {
+            "system": true
         },
         "official_date": {
-            "manual": true,
-            "format": "yyyy-mm-dd"
+            "manual": true
         },
-        "official_balance": {
-            "field": "Saldo",
-            "last": true
+        "official_balance": { "field": "Saldo", "last": true },
+        "separator": ";",
+        "decimal": ",",
+        "unmapped": [],
+        "reference": {
+            "manual": true
         },
         "details": {
             "date": {
                 "field": "Datum",
-                "format": "dd/mm/yyyy"
+                "formatFrom": "dd/mm/yyyy",
+                "formatTo": "yyyy-mm-dd"
             },
-            "valutation_date": "Valuta",
-            "message": "Omschrijving",
-            "amount": "123.45",
-            "code": null,
-            "contra_account_name": "123",
-            "contra_account_number": "123",
-            "batch_reference": {
-                "fromMain": true,
-                "key": "reference"
+            "valutation_date": {
+                "field": "Valuta",
+                "formatFrom": "dd/mm/yyyy",
+                "formatTo": "yyyy-mm-dd"
             },
+            "message": {
+                "field": "Omschrijving",
+                "beautify": true
+            },
+            "amount": { "field": "Bedrag", "amount": true },
+            "contra_account_name": { "field": "Naam tegenpartij", "beautify": true },
+            "contra_account_number": "Rekening tegenpartij",
+            "batch_reference": { "fromManual": true, "key": "reference" },
             "offset": null,
             "account_servicer_transaction_id": null
-        },
-        "separator": ";",
-        "decimal": ",",
-        "unmapped": [
-            "credit",
-            "debet"
-        ]
+        }
     },
-    "path": "/config/247030397351757807",
+    "path": "/config/243233339071268359",
     "httpMethod": "POST",
     "isBase64Encoded": false,
     "headers": {}

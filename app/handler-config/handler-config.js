@@ -2,6 +2,7 @@ const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
 const { getFile, putPromise } = require('../handler-files/s3functions');
 const { privateBucket } = require('../SECRETS');
+const { emptyMapping, validate } = require('./config-helpers');
 
 exports.configHandler = function (event) {
     const auth = event.headers.Authorization;
@@ -36,7 +37,7 @@ const configSwitchHandler = (event) => {
             }
             return putPromise(postParams)
                 .then(data => {
-                    return response(200, data);
+                    return response(200, validate(event.body));
                 })
                 .catch(err => response(500, 'unable to save file'));
 
@@ -55,10 +56,13 @@ const configSwitchHandler = (event) => {
                         Body: JSON.stringify(newConfig),
                         ContentType: 'application/json'
                     }
-                    return putPromise(postParams)
+                    return Promise.all([
+                        putPromise(postParams),
+                        newConfig
+                    ])
                 })
-                .then(data => {
-                    return response(200, data);
+                .then(dataList => {
+                    return response(200, validate(dataList[1]));
                 })
                 .catch(err => response(500, err.message));
 
@@ -69,26 +73,4 @@ const configSwitchHandler = (event) => {
             return response(405, 'not allowed');
             break;
     }
-}
-
-const emptyMapping = {
-    "financial_account_id": { "system": true }, // system generated, = account id from request path
-    "reference": { "manual": true }, // manually set by user
-    "official_date": { "manual": true, "format": "yyyy-mm-dd" }, // manually set by user
-    "official_balance": null,
-    "details": {
-        "date": null,
-        "valutation_date": null,
-        "message": null,
-        "amount": null,
-        "code": null,
-        "contra_account_name": null,
-        "contra_account_number": null,
-        "batch_reference": null,
-        "offset": null,
-        "account_servicer_transaction_id": null
-    },
-    "separator": ";",
-    "decimal": ",",
-    "unmapped": []
 }

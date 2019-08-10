@@ -1,22 +1,13 @@
 {
     "body": {
-        "financial_account_id": { "system" : true },
-        "reference": {
-            "manual": false
+        "official_date": {
+            "manual": true
         },
-        "details": {
-            "valutation_date": {
-                "field": "Valuta",
-                "format": "dd/mm/yyyy"
-            },
-            "unmapped": [
-                "credit",
-                "debet",
-                "new"
-            ]
-        }
+        "separator": ";",
+        "decimal": ",",
+        "unmapped": []
     },
-    "path": "/config/247030397351757807",
+    "path": "/config/243233339071268359",
     "httpMethod": "PATCH",
     "isBase64Encoded": false,
     "headers": {}

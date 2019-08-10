@@ -1,0 +1,77 @@
+{
+    "path": "/convert/243233339071268359",
+    "httpMethod": "POST",
+    "isBase64Encoded": false,
+    "headers": {},
+    "body": {
+        "csv_filename": "BE08736042471213_20190217_tot_20190220.csv",
+        "config": "bank-config-243233339071268359.json",
+        "reference": "KBCSCKS",
+        "official_date": "2019-08-09",
+        "csv_content":
+        [
+            [
+              "Rekeningnummer",
+              "Rubrieknaam",
+              "Naam",
+              "Munt",
+              "Afschriftnummer",
+              "Datum",
+              "Omschrijving",
+              "Valuta",
+              "Bedrag",
+              "Saldo",
+              "Credit",
+              "Debet",
+              "Rekening tegenpartij",
+              "BIC code tegenpartij",
+              "Naam tegenpartij",
+              "Adres tegenpartij",
+              "gestructureerde mededeling",
+              "vrije mededeling"
+            ],
+            [
+              "BE08 7360 4247 1213",
+              "",
+              "MOBLY NV",
+              "EUR",
+              "2019030",
+              "18/02/2019",
+              "\"EUROPESE OVERSCHRIJVING NAAR RO61 BTRL EURC RT04 4967 2102 BANKIER BEGUNSTIGDE: BTRLRO22 SERGIU GRIGORIEV INVOICE NR 9 REFERENTIE DOORGEGEVEN OP 18-02-2019 MET VIA BETAALAGENDA\"",
+              "18/02/2019",
+              "-7350,00",
+              "4311001,67",
+              "",
+              "-7350,00",
+              "RO61 BTRL EURC RT04 4967 2102",
+              "BTRLRO22",
+              "SERGIU GRIGORIEV",
+              "",
+              "",
+              "INVOICE NR 9",
+              ""
+            ],
+            [
+              "BE08 7360 4247 1213",
+              "",
+              "MOBLY NV",
+              "EUR",
+              "2019031",
+              "20/02/2019",
+              "\"GEZAMENLIJKE OVERSCHRIJVINGSOPDRACHT REFERENTIE MONEYBIRD-15504181997384493-1 DOORGEGEVEN OP 17-02-2019 MET KBC-ONLINE FOR BUSINESS\"",
+              "20/02/2019",
+              "-17794,27",
+              "4293207,40",
+              "",
+              "-17794,27",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ]
+          ]
+    }
+}

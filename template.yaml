@@ -28,6 +28,11 @@ Resources:
           Properties:
             Path: /files/{path+}
             Method: any
+        Convert:
+          Type: Api
+          Properties:
+            Path: /convert/{path}
+            Method: any
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -39,6 +44,9 @@ Outputs:
   FilesApi:
     Description: "API Gateway endpoint URL for Files function of Bank"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/files/"
+  ConvertApi:
+    Description: "API Gateway endpoint URL for Convert function of Bank"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/convert/"
   BankFunction:
     Description: "Bank Lambda Function ARN"
     Value: !GetAtt BankFunction.Arn
