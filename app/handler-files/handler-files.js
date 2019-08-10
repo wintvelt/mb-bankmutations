@@ -59,13 +59,12 @@ const filesSwitchHandler = function(event) {
         case 'POST':
             if (!event.body) return response(400, 'Bad request');
             const postBody = event.body;
-            if (!postBody.filename || !postBody.data) return response(400, 'Bad request');
             const postAccount = pathParams[2];
-            const postFilename = postAccount + '/' + postBody.filename
+            const postFilename = postAccount + '/' + pathParams[3];
             const postParams = {
                 Bucket: privateBucket,
                 Key: postFilename,
-                Body: JSON.stringify(postBody.data),
+                Body: JSON.stringify(postBody),
                 ContentType: 'application/json'
             }
             return putPromise(postParams)

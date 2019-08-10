@@ -31,7 +31,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "unmapped": [ "credit", "debet" ]  // fields from csv which are not mapped
     }
     ```
-    * If the file does not (yet) exist a generic json file without mappings will be returned
+    * If the file does not (yet) exist, a generic json file without mappings will be returned
     * Error response if account id is not a valid Moneybird account id
 * `POST /config/[account id]` to create/update mappings
     * `[account id]` must be a valid Moneybird account id (is checked)
@@ -84,6 +84,8 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     ]
     ```
 * `POST` only valid with filename, needs body with file too (duh)
+    * `[account id]` must be a valid Moneybird account id (is checked)
+    * request header must contain auth Bearer token
     ```json
     {
         "filename": "KBC1213 201907.json", // filename under which to save
