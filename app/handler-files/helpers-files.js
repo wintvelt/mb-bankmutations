@@ -41,7 +41,8 @@ const combineSame = (arr) => {
         .reduce((acc, curr) => {
             const last = acc.slice(-1)[0];
             if (last && curr.filename === last.filename) {
-                return [...acc.slice(0,-1), Object.assign({}, last, curr)]
+                const lastMod = Object.assign({}, last.last_modified, curr.last_modified);
+                return [...acc.slice(0,-1), Object.assign({}, last, curr, { last_modified: lastMod })]
             } else {
                 return [...acc, curr]
             }
@@ -51,9 +52,12 @@ const combineSame = (arr) => {
 const convertExt = (rawList) => {
     return rawList.map(it => {
         const fileType = extOf(it.filename);
-        const modKey = (fileType)? fileType + '_last_modified' : 'last_modified';
         let newObj = { filename: noExt(it.filename) }
-        newObj[modKey] = it.last_modified;
+        if (fileType) {
+            let modObj = {};
+            modObj[fileType] = it.last_modified;
+            newObj.last_modified = modObj;
+        }
         return newObj;
     })
 }

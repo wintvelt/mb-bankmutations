@@ -1,7 +1,7 @@
 const { privateBucket } = require('../SECRETS');
 const { checkAccount, patchObj, nowDate } = require('../helpers/helpers');
 const { getPromise, getFile, putPromise, listPromise } = require('../handler-files/s3functions');
-const { filterFiles, sumsOf } = require('../handler-files/helpers-files');
+const { sumsOf } = require('../handler-files/helpers-files');
 const { response } = require('../helpers/helpers-api');
 const { postMoneyData } = require('../helpers/helpers-moneybird');
 

@@ -43,25 +43,25 @@ const filesSwitchHandler = function (event) {
 
         case 'POST':
             if (!event.body) return response(400, 'Bad request');
-            const postBody = event.body;
+            const postBody = (typeof event.body === 'string')? event.body : JSON.stringify(event.body);
             const postAccount = pathParams[2];
             const postFilename = postAccount + '/' + pathParams[3];
             const postParams = {
                 Bucket: privateBucket,
                 Key: postFilename,
-                Body: JSON.stringify(postBody),
+                Body: postBody,
                 ContentType: 'application/json'
             }
             return putPromise(postParams)
                 .then(data => {
                     return response(200, data);
                 })
-                .catch(err => response(500, 'could not save file'));
+                .catch(err => response(500, err.message));
 
         case 'DELETE':
             if (!event.body) return response(400, 'Bad request');
             const delBody = event.body;
-            if (!delBody.filename) return response(400, 'Bad request');
+            if (!delBody || !delBody.filename) return response(400, 'Bad request');
             const delAccount = pathParams[2];
             const delFilename = delAccount + '/' + delBody.filename
             const delParams = {
@@ -70,7 +70,7 @@ const filesSwitchHandler = function (event) {
             }
             return deletePromise(delParams)
                 .then(data => response(200, data))
-                .catch(err => response(500, 'could not delete file'));
+                .catch(err => response(500, err.message));
 
         case 'OPTIONS':
             return response(200, 'ok');
