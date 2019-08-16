@@ -28,16 +28,22 @@ const convertSwitchHandler = (event) => {
                     if (Array.isArray(config)) throw new Error('missing config file');
                     if (validate(config).length > 0) throw new Error('invalid config');
                     if (!event.body.csv_content) throw new Error('csv_content missing');
-                    // INSERT HERE CHECK IF OBJECT OR STRING (2x)
-                    var csvArr = event.body.csv_content;
+                    let csvArr = event.body.csv_content;
                     if (typeof event.body.csv_content === 'string') {
+                        // need to parse csv string first
                         const separator = config.separator || ';'
-                        var arr = event.body.csv_content.split('\r');
+                        const arr = csvString.split(/\n|\r/);
                         if (!arr[arr.length - 1]) arr = arr.slice(0, -1);
                         if (arr.length < 2) throw new Error('csv content invalid');
                         csvArr = arr.map(it => {
-                            var row = it.split(separator);
+                            let row;
+                            try {
+                                row = JSON.parse('['+it+']');
+                            } catch (_) {
+                                row = it.split(separator);
+                            }
                             if (!row[row.length - 1]) row = row.slice(0, -1);
+                            return row;
                         });
                     }
                     console.log(1);

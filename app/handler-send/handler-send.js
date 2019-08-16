@@ -1,7 +1,7 @@
 const { privateBucket } = require('../SECRETS');
 const { checkAccount, patchObj, nowDate } = require('../helpers/helpers');
 const { getPromise, getFile, putPromise, listPromise } = require('../handler-files/s3functions');
-const { filterFiles } = require('../handler-files/helpers-files');
+const { filterFiles, sumsOf } = require('../handler-files/helpers-files');
 const { response } = require('../helpers/helpers-api');
 const { postMoneyData } = require('../helpers/helpers-moneybird');
 
@@ -23,7 +23,7 @@ const sendSwitchHandler = function (event) {
 
     switch (event.httpMethod) {
         case 'POST':
-            if (event.body.filename) {
+            if (event.body && event.body.filename) {
                 const filename = account + '/' + event.body.filename;
                 const sumsfile = account + '/summary-' + account + '.json';
                 const getMutations = {
@@ -45,59 +45,29 @@ const sendSwitchHandler = function (event) {
                         // return dataList;
                         const mbData = JSON.parse(dataList[0]);
                         const oldSummaries = dataList[1];
-                        const newSummary = { 
-                            filename, 
+                        const newSummary = {
+                            filename,
                             last_sent: nowDate(),
-                            send_result_ok: (mbData.id)? true : false,
+                            send_result_ok: (mbData.id) ? true : false,
                             id: mbData.id
                         }
-                        const newSummaries = patchObj(oldSummaries, [ newSummary ], filename);
+                        const newSummaries = patchObj(oldSummaries, [newSummary], 'filename');
                         const postParams = {
                             Bucket: privateBucket,
                             Key: sumsfile,
                             Body: JSON.stringify(newSummaries),
                             ContentType: 'application/json'
                         }
-                        const listParams = {
-                            Bucket: privateBucket,
-                        }
-                        return Promise.all([
-                            putPromise(postParams),
-                            listPromise(listParams),
-                            newSummaries
-                        ]);
+                        return putPromise(postParams);
                     })
-                    .then(dataList => {
-                        // result from post sumsfile itself to return
-                        // return response(200, dataList)
-                        const rawList = filterFiles(dataList[1], account);
-                        const newSummaries = dataList[2];
-                        return response(200, patchObj(rawList, newSummaries, "filename"));
+                    .then((_) => {
+                        return sumsOf(account);
                     })
+                    .then(sums => response(200, sums))
                     .catch(err => response(500, err.message));
             }
-            if (pathParams.length === 3) {
-                const account = pathParams[2];
-                const listParams = {
-                    Bucket: privateBucket,
-                }
-                const summaryParams = {
-                    Bucket: privateBucket,
-                    Key: account + '/summary-' + account + '.json'
-                }
-                return Promise.all([
-                    listPromise(listParams),
-                    getPromise(summaryParams).catch(() => 'not found')
-                ])
-                    .then(dataList => {
-                        const rawList = filterFiles(dataList[0], account);
-                        const summaries = dataList[1];
-                        if (summaries === 'not found') return response(200, rawList);
-                        return response(200, patchObj(rawList, summaries, "filename"));
-                    })
-                    .catch(err => response(500, 'server error'));
-            }
-            return response(403, 'invalid path');
+            // When there is no filename
+            return response(500, 'invalid post body');
 
 
         default:

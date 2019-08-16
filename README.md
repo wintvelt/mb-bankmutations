@@ -12,7 +12,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     {
         "financial_account_id": { "system": true }, // system generated, = account id from request path
         "reference": { "manual" : true }, // manually set by user
-        "official_date": { "manual" : true, "format": "yyyy-mm-dd" }, // manually set by user
+        "official_date": { "manual" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // manually set by user
         "official_balance": { "field": "Saldo", "last": true }, // take value from last detail line
         "details": {
             "date": { "field": "Datum", "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // simple mapping
@@ -118,8 +118,7 @@ In the private bucket, a folder is made for each account id. In these folders:
     ```json
     [
         { 
-            "filename": "[something].json", // the name used to save the file
-            "last_modified": "[date]",
+            "filename": "[something].json", // full name of file sent, with path
             "last_sent": "20190802", // will be null if never sent
             "send_result_ok": true, // if Moneybird response was OK
             "id": "123456" // moneybird id of the financial statement (to link to)

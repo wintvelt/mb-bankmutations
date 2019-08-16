@@ -1,8 +1,8 @@
 // Read and write files and folders on S3
 const { privateBucket } = require('../SECRETS');
-const { checkAccount, patchObj } = require('../helpers/helpers');
+const { checkAccount } = require('../helpers/helpers');
 const { getPromise, putPromise, deletePromise, listPromise } = require('./s3functions');
-const { filterFiles } = require('./helpers-files');
+const { sumsOf } = require('./helpers-files');
 const { response } = require('../helpers/helpers-api');
 
 exports.fileHandler = function (event) {
@@ -35,25 +35,9 @@ const filesSwitchHandler = function (event) {
             }
             if (pathParams.length === 3) {
                 const account = pathParams[2];
-                const listParams = {
-                    Bucket: privateBucket,
-                }
-                const summaryParams = {
-                    Bucket: privateBucket,
-                    Key: account + '/summary-' + account + '.json'
-                }
-                return Promise.all([
-                    listPromise(listParams),
-                    getPromise(summaryParams).catch(() => 'not found')
-                ])
-                    .then(dataList => {
-                        const rawList = filterFiles(dataList[0], account);
-                        const summaries = dataList[1];
-                        console.log(typeof summaries, typeof rawList);
-                        if (summaries === 'not found') return response(200, rawList);
-                        return response(200, patchObj(rawList, summaries, "filename"));
-                    })
-                    .catch(err => response(500, 'server error'));
+                return sumsOf(account)
+                    .then(sums => response(200, sums))
+                    .catch(err => response(500, err.message));
             }
             return response(403, 'invalid path');
 
