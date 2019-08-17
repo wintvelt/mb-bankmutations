@@ -10,26 +10,26 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * returns a json file
     ```json
     {
-        "financial_account_id": { "system": true }, // system generated, = account id from request path
-        "reference": { "manual" : true }, // manually set by user
-        "official_date": { "manual" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // manually set by user
-        "official_balance": { "field": "Saldo", "last": true }, // take value from last detail line
+        "financial_account_id": { "system": true },
+        "reference": { "manual" : true },
+        "official_date": { "manual" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
+        "official_balance": { "field": "Saldo", "last": true },
         "details": {
-            "date": { "field": "Datum", "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // simple mapping
-            "valutation_date": "Valuta", // can be string too
-            "message": { "field": [ "Tegenpartij", "Omschrijving" ], "beautify": true }, // combine multiple cells
+            "date": { "field": "Datum", "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
+            "valutation_date": "Valuta",
+            "message": { "field": [ "Tegenpartij", "Omschrijving" ], "beautify": true },
             "amount": { "field": "Bedrag", "amount": true },
-            "code": null, // unassigned
+            "code": null,
             "contra_account_name": "naam tegenrekening",
             "contra_account_number": "tegenrekening",
-            "batch_reference": { "field": "Omschrijving", "match": "Moneybird", "offset": 10, "length": 12 }, // default
+            "batch_reference": { "field": "Omschrijving", "match": "Moneybird", "offset": 10, "length": 12 },
             "offset": null,
             "account_servicer_transaction_id": null
         },
         "separator": ";",
         "decimal": ",",
-        "unmapped": [ "credit", "debet" ],  // fields from csv which are not mapped
-        "validated": true // if a conversion with this config went OK`
+        "unmapped": [ "credit", "debet" ],
+        "validated": true
     }
     ```
     * If the file does not (yet) exist, a generic json file without mappings will be returned
@@ -62,10 +62,10 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * body must contain:
     ```json
     {
-        "csv_filename": "KBC1213 201907.csv", // name of csv file to convert
-        "csv_content": "datum; valuta; ...\n20190708; EUR;...", // the csv file
-        "config": "bank-config-[account id].json", // valid config filename
-        "reference": "KBCSCKS", // must include all manual fields from config
+        "csv_filename": "KBC1213 201907.csv",
+        "csv_content": "datum; valuta; ...\n20190708; EUR;...",
+        "config": "bank-config-[account id].json",
+        "reference": "KBCSCKS",
         "official_date": "2019-07-27"
     }
     ```
@@ -76,11 +76,11 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     ```json
     [
         { 
-            "filename": "[something]", // the name used to save the file, without extension
+            "filename": "[something]",
             "last_modified": { "csv": "[date]", "json": "[date]" },
-            "last_sent": "20190802", // will be null if never sent
-            "send_result_ok": true, // if Moneybird response was OK
-            "id": "123456" // moneybird id of the financial statement (to link to)
+            "last_sent": "20190802",
+            "send_result_ok": true,
+            "id": "123456"
         }
     ]
     ```
@@ -97,8 +97,8 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * `[account id]` must be valid (will be checked)
     ```json
     {
-        "filename": "...", // if filled will try and get filename from S3 to send to moneybird
-        "json": "{ ... }" // the json body (stringified) to send to Moneybird (only if no filename)
+        "filename": "...",
+        "json": "{ ... }"
     }
     ```
     * with response from moneybird, will update `'[account]/summary-account id.json` too, with the date sent, send result and (if OK) the moneybird ID of the statement.
@@ -114,10 +114,10 @@ In the private bucket, a folder is made for each account id. In these folders:
     ```json
     [
         { 
-            "filename": "[something].json", // full name of file sent, with path
-            "last_sent": "20190802", // will be null if never sent
-            "send_result_ok": true, // if Moneybird response was OK
-            "id": "123456" // moneybird id of the financial statement (to link to)
+            "filename": "[something].json",
+            "last_sent": "20190802",
+            "send_result_ok": true,
+            "id": "123456"
         }
     ]
     ```
