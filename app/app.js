@@ -8,9 +8,11 @@ const { accessToken } = require('./SECRETS');
 
 exports.handler = async function (event) {
     // helper for localhost connection to Moneybird
+    if (event.httpMethod === 'OPTIONS') return response(200, 'ok');
+    
     const auth = (process.env.AWS_SAM_LOCAL) ? 'Bearer ' + accessToken : event.headers.Authorization;
     const newHeaders = Object.assign({}, event.headers, { Authorization: auth });
-    var newBody = null;
+    let newBody = null;
     try {
         if (event.body && typeof event.body === 'string') newBody = JSON.parse(event.body);
     } catch (_) {

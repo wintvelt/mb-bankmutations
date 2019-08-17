@@ -25,7 +25,8 @@ const configSwitchHandler = (event) => {
                 .then(config => {
                     if (config instanceof Array && config.length === 0) return response(200, emptyMapping);
                     return response(200, config)
-                });
+                })
+                .catch(err => response(500, 'unable to save file'));
 
         case 'POST':
             if (!event.body) return response(403, 'bad request');
@@ -65,9 +66,6 @@ const configSwitchHandler = (event) => {
                     return response(200, validate(dataList[1]));
                 })
                 .catch(err => response(500, err.message));
-
-        case 'OPTIONS':
-            return response(200, 'ok');
 
         default:
             return response(405, 'not allowed');

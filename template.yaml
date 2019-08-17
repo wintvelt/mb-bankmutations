@@ -64,7 +64,7 @@ Outputs:
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/convert/"
   SendApi:
     Description: "API Gateway endpoint URL for Send function of Bank"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/Send/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/send/"
   BankFunction:
     Description: "Bank Lambda Function ARN"
     Value: !GetAtt BankFunction.Arn

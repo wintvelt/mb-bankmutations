@@ -17,9 +17,12 @@ const getPromise = function (params) {
                 if (err) {
                     reject(err);
                 } else {
-                    const buffer = Buffer.from(data.Body);
-                    const newData = JSON.parse(buffer.toString('utf8'));
-                    resolve(newData);
+                    if (data.Body) {
+                        const buffer = Buffer.from(data.Body);
+                        const newData = JSON.parse(buffer.toString('utf8'));
+                        resolve(newData);
+                    }
+                    resolve(data);
                 }
             }
         );

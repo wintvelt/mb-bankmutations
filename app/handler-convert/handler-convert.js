@@ -76,9 +76,6 @@ const convertSwitchHandler = (event) => {
                 })
                 .catch(err => response(500, err.message));
 
-        case 'OPTIONS':
-            return response(200, 'ok');
-
         default:
             return response(405, 'not allowed');
             break;
