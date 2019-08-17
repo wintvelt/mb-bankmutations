@@ -10,6 +10,16 @@ Globals:
   Function:
     Timeout: 10
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: mb-bankmutations
+    Description: Function to send csv with bank statements to moneybird
+    Author: Wouter
+    License: license.txt
+    ReadmeUrl: README.md
+    Labels: ['Moneybird', 'Moblybird', 'Mobly']
+    SemanticVersion: 0.0.1
+
 Resources:
   BankFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
