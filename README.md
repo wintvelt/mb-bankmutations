@@ -1,4 +1,6 @@
 # Serverless function mb-bankmutations
+![made for aws](https://img.shields.io/badge/made%20for-AWS-blue)
+
 An AWS serverless application, that provides endpoints for sending .csv files with bank account mutations to Moneybird.
 Specifically for KBC, because their MT940 output s*cks, and the only decent export from KBC is in .csv format.
 
