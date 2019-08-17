@@ -1,8 +1,10 @@
 
 # Created by https://www.gitignore.io/api/osx,node,linux,windows
 
-event.json
+event*.json
+
 app/SECRETS.js
+packaged.yaml
 
 ### Linux ###
 *~
