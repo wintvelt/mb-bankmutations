@@ -1,7 +1,0 @@
-{
-    "body": "{\n  \"financial_statement\": {\n    \"financial_account_id\": \"243233339071268359\",\n    \"official_date\": \"2019-08-09\",\n    \"reference\": \"KBCSCKS\",\n    \"official_balance\": \"4293207,40\",\n    \"financial_mutations_attributes\": {\n      \"1\": {\n        \"date\": \"2019-02-18\",\n        \"valutation_date\": \"2019-02-18\",\n        \"message\": \"Europese Overschrijving Naar RO61 BTRL EURC RT04 4967 2102 Bankier Begunstigde: Btrlro22 Sergiu Grigoriev Invoice Nr 9 Referentie Doorgegeven Op 18-02-2019 Met Via Betaalagenda\",\n        \"amount\": \"-7350,00\",\n        \"contra_account_name\": \"Sergiu Grigoriev\",\n        \"contra_account_number\": \"RO61 BTRL EURC RT04 4967 2102\",\n        \"batch_reference\": \"KBCSCKS\"\n      },\n      \"2\": {\n        \"date\": \"2019-02-20\",\n        \"valutation_date\": \"2019-02-20\",\n        \"message\": \"Gezamenlijke Overschrijvingsopdracht Referentie MONEYBIRD-15504181997384493-1 Doorgegeven Op 17-02-2019 Met Kbc-Online For Business\",\n        \"amount\": \"-17794,27\",\n        \"contra_account_name\": \"\",\n        \"contra_account_number\": \"\",\n        \"batch_reference\": \"KBCSCKS\"\n      }\n    }\n  }\n}",
-    "path": "/files/243233339071268359/KBC 20190809.json",
-    "httpMethod": "POST",
-    "isBase64Encoded": false,
-    "headers": {}
-}
