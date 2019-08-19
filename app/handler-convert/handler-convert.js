@@ -35,7 +35,7 @@ const convertSwitchHandler = (event) => {
                     const filename = event.body.csv_filename.split('.');
                     if (!filename[1] || filename[1] !== 'csv') {
                         errors = Object.assign([], errors, { csv_read_error: 'bestandsnaam is niet .csv' })
-                        return [ null, errors ]; // abort at this point
+                        return [errors, null]; // abort at this point
                     }
                     let csvArr = event.body.csv_content;
                     if (typeof event.body.csv_content === 'string') {
@@ -49,7 +49,7 @@ const convertSwitchHandler = (event) => {
                         csvArr = arr.map(it => {
                             let row;
                             try {
-                                row = JSON.parse('['+it+']');
+                                row = JSON.parse('[' + it + ']');
                             } catch (_) {
                                 row = it.split(separator);
                             }
@@ -60,14 +60,23 @@ const convertSwitchHandler = (event) => {
                             return row;
                         });
                     }
+                    if (errors) return [errors, null]; // abort if csv cannot be read
+
                     let systemFields, detailsArr, firstLastFields;
                     console.log('check and fill system fields');
-                    [ systemFields, errors ] = makeSystemFields(config, filename[0], accountID, errors);
+                    [systemFields, errors] = makeSystemFields(config, filename[0], accountID, errors);
                     console.log('check and fill details');
-                    [ detailsArr, errors ] = makeDetails(csvArr, config, systemFields, errors);
+                    [detailsArr, errors] = makeDetails(csvArr, config, systemFields, errors);
                     console.log('check and fill global calculated fields');
-                    [ firstLastFields, errors ] = makeFirstLast(config, csvArr, errors); // need to adapt
-                    if (errors) return [null, errors]; // abort if there are errors
+                    [firstLastFields, errors] = makeFirstLast(config, csvArr, errors);
+                    const csvSave = {
+                        Bucket: privateBucket,
+                        Key: accountID + '/' + event.body.filename,
+                        Body: (typeof event.body.csv_content === 'string') ?
+                            event.body.csv_content : JSON.stringify(event.body.csv_content),
+                        ContentType: 'text/csv'
+                    }
+                    if (errors) return [errors, putPromise(csvSave)]; // save csv and abort if there are errors
 
                     console.log('create output object');
                     const details = { 'financial_mutations_attributes': objFromArr(detailsArr) };
@@ -84,12 +93,13 @@ const convertSwitchHandler = (event) => {
                         ContentType: 'application/json'
                     }
                     return Promise.all([
+                        { financial_statement: outObj },
                         putPromise(configSave),
-                        { financial_statement: outObj }
+                        putPromise(csvSave)
                     ])
                 })
                 .then(dataList => {
-                    return response(200, dataList[1]);
+                    return response(200, dataList[0]);
                 })
                 .catch(err => response(500, err.message));
 
