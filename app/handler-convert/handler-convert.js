@@ -1,7 +1,7 @@
 const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
 const { getFile, putPromise } = require('../handler-files/s3functions');
-const { makeDetails, makeManual, makeFirstLast, objFromArr } = require('./convert-helpers');
+const { makeDetails, makeSystemFields, makeFirstLast, objFromArr } = require('./convert-helpers');
 const { validate } = require('../handler-config/config-helpers');
 const { privateBucket } = require('../SECRETS');
 
@@ -25,16 +25,27 @@ const convertSwitchHandler = (event) => {
             if (!event.body) return response(403, 'bad request');
             return getFile(configFilename, privateBucket)
                 .then(config => {
+                    let errors = null;
                     if (Array.isArray(config)) throw new Error('missing config file');
-                    if (validate(config).length > 0) throw new Error('invalid config');
                     if (!event.body.csv_content) throw new Error('csv_content missing');
+                    if (!event.body.csv_filename) throw new Error('csv_filename missing');
+                    // check if required (detail) fields are mapped
+                    const reqFieldErrors = validate(config);
+                    if (reqFieldErrors.length > 0) errors = { field_errors: reqFieldErrors }
+                    const filename = event.body.csv_filename.split('.');
+                    if (!filename[1] || filename[1] !== 'csv') {
+                        errors = Object.assign([], errors, { csv_read_error: 'bestandsnaam is niet .csv' })
+                        return [ null, errors ]; // abort at this point
+                    }
                     let csvArr = event.body.csv_content;
                     if (typeof event.body.csv_content === 'string') {
                         // need to parse csv string first
                         const separator = config.separator || ';'
-                        const arr = csvString.split(/\n|\r/);
-                        if (!arr[arr.length - 1]) arr = arr.slice(0, -1);
-                        if (arr.length < 2) throw new Error('csv content invalid');
+                        const arr = csvString.split(/\n|\r/); // split string into lines
+                        arr = arr.filter(line => (line.length > 0)); // remove empty lines if needed
+                        if (arr.length < 2) {
+                            errors = Object.assign([], errors, { csv_read_error: 'bestand bevat geen (leesbare) regels' })
+                        }
                         csvArr = arr.map(it => {
                             let row;
                             try {
@@ -42,17 +53,23 @@ const convertSwitchHandler = (event) => {
                             } catch (_) {
                                 row = it.split(separator);
                             }
-                            if (!row[row.length - 1]) row = row.slice(0, -1);
+                            if (!row[row.length - 1]) row = row.slice(0, -1); // remove last empty fields if needed
+                            if (Math.abs(row.length - arr[0].length) > 2) {
+                                errors = Object.assign([], errors, { csv_read_error: 'kan regels niet lezen' })
+                            }
                             return row;
                         });
                     }
-                    console.log(1);
-                    const manualFields = makeManual(event.body, config);
-                    console.log(2);
-                    const detailsArr = makeDetails(csvArr, config, manualFields);
-                    console.log(3);
-                    const firstLastFields = makeFirstLast(config, csvArr);
-                    console.log(4);
+                    let systemFields, detailsArr, firstLastFields;
+                    console.log('check and fill system fields');
+                    [ systemFields, errors ] = makeSystemFields(config, filename[0], accountID, errors);
+                    console.log('check and fill details');
+                    [ detailsArr, errors ] = makeDetails(csvArr, config, systemFields, errors);
+                    console.log('check and fill global calculated fields');
+                    [ firstLastFields, errors ] = makeFirstLast(config, csvArr, errors); // need to adapt
+                    if (errors) return [null, errors]; // abort if there are errors
+
+                    console.log('create output object');
                     const details = { 'financial_mutations_attributes': objFromArr(detailsArr) };
                     const outObj = Object.assign({},
                         { financial_account_id: accountID },

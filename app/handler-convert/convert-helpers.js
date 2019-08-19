@@ -1,94 +1,96 @@
-const makeDetails = (csvArr, config, manualFields) => {
-    const mutArr = makeMutArr(csvArr, config, manualFields);
-    return mutArr;
-}
-
-const makeManual = (body, config) => {
-    const manualFieldList = Object.keys(config)
-        .map(key => {
-            return { key, value: config[key] }
-        })
-        .filter(it => (typeof it.value === 'object' && it.value.manual))
-        .map(it => it.key);
-    var outObj = {};
-    for (let i = 0; i < manualFieldList.length; i++) {
-        const key = manualFieldList[i];
-        if (body[key]) {
-            outObj[key] = body[key];
-        }
-    }
-    if (Object.keys(outObj).length < manualFieldList.length) throw new Error('missing manual fields');
-    return outObj;
-}
-
-const makeMutArr = (csvArr, config, manualFields) => {
+const makeDetails = (csvArr, config, systemFields, errors) => {
     const decimal = config.decimal || ',';
     const headers = csvArr[0];
-    var outArr = [];
-    for (let i = 1; i < csvArr.length; i++) {
-        const csvRow = csvArr[i];
-        var outObj = {};
+    let outArr = [];
+    let newErrors = errors;
+
+    for (const csvRow of csvArr) {
+        let outObj = {};
         for (const key in config.details) {
             const fieldConfig = config.details[key];
             if (fieldConfig) {
-                var rawValue;
-                if (fieldConfig.fromManual) {
-                    if (!fieldConfig.key || !manualFields[fieldConfig.key]) throw new Error('invalid fromManual config');
-                    rawValue = manualFields[fieldConfig.key]
+                let rawValue, error, newField;
+                if (fieldConfig.fromSystem) {
+                    if (!fieldConfig.key || !systemFields[fieldConfig.key]) throw new Error('invalid fromSystem config');
+                    rawValue = systemFields[fieldConfig.key]
                 } else {
-                    rawValue = makeRawValue(fieldConfig, headers, csvRow);
+                    [error, rawValue] = makeRawValue(key, fieldConfig, headers, csvRow);
+                    if (error) {
+                        let field_errors = (!newErrors || !newErrors.field_errors) ? [] : [...errors.field_errors];
+                        field_errors.push(error);
+                        newErrors = Object.assign({}, newErrors, { field_errors });
+                    }
                 }
-                outObj = Object.assign(outObj, makeField(key, fieldConfig, rawValue, decimal, manualFields));
+                [error, newField] = makeField(key, fieldConfig, rawValue, decimal, systemFields)
+                if (error) {
+                    const field_errors = (!newErrors || !newErrors.field_errors) ? [] : [...errors.field_errors];
+                    field_errors.push(error);
+                    newErrors = Object.assign({}, newErrors, { field_errors });
+                }
+                outObj = Object.assign(outObj, newField);
             }
         }
         outArr.push(outObj)
     }
-    return outArr;
+    return [outArr, newErrors];
 }
 
-const makeRawValue = (fieldConfig, headers, csvRow) => {
+const makeSystemFields = (config, filename, accountID, errors) => {
+    const outObj = {
+        financial_account_id: accountID,
+        reference: filename,
+        official_date: nowDate(config.official_date.formatTo)
+    };
+    return [outObj, errors];
+}
+
+const makeRawValue = (key, fieldConfig, headers, csvRow) => {
+    let error = null;
     const fields = (typeof fieldConfig === 'string') ? [fieldConfig]
         : (typeof fieldConfig.field === 'string') ? [fieldConfig.field]
             : fieldConfig.field;
+    let notFoundFields = [];
     const value = fields
         .map((field) => {
             const fieldIndex = headers.indexOf(field);
-            if (fieldIndex === -1) throw new Error('config header not found in csv');
+            if (fieldIndex === -1) notFoundFields.push(field);
             return csvRow[fieldIndex];
         })
         .join(' - ');
-    return value;
+    if (notFoundFields.length > 0) error = { field: key, error: `veld ${notFoundFields.join(', ')} niet gevonden in csv` };
+    return [value, error];
 }
 
-const makeField = (key, fieldConfig, rawValue, decimal, manualFields) => {
-    var outObj = {}
+const makeField = (key, fieldConfig, rawValue, decimal, systemFields) => {
+    let outObj = {};
+    let error = null;
     if (!rawValue || typeof fieldConfig === 'string') {
         outObj[key] = rawValue;
-        return outObj;
+        return [outObj, error];
     }
     if (fieldConfig.beautify) {
         const valSingleSpace = rawValue.replace(/\"/g, '').replace(/\s\s+/g, ' ');
         outObj[key] = initCaps(valSingleSpace);
-        return outObj;
+        return [outObj, error];
     }
     if (fieldConfig.formatFrom) {
         if (!fieldConfig.formatTo) throw new Error('missing formatTo');
         const ymd = getDate(rawValue, fieldConfig.formatFrom);
         const outValue = putDate(ymd, fieldConfig.formatTo);
         outObj[key] = outValue;
-        return outObj;
+        return [outObj, error];
     }
     if (fieldConfig.match) {
         if (!fieldConfig.match || !fieldConfig.length || !fieldConfig.offset) throw new Error('invalid match format');
         const index = rawValue.indexOf(fieldConfig.match);
         if (index === -1) {
             outObj[key] = null;
-            return outObj;
+            return [outObj, error];
         }
         const offset = (typeof fieldConfig.offset === 'string') ? parseInt(fieldConfig.offset) : fieldConfig.offset;
         const length = (typeof fieldConfig.length === 'string') ? parseInt(fieldConfig.length) : fieldConfig.length;
         outObj[key] = rawValue.slice(index + offset, index + offset + length);
-        return outObj;
+        return [outObj, error];
     }
     if (fieldConfig.amount) {
         const amountStr = (typeof rawValue === 'number') ? rawValue.toString() : rawValue;
@@ -96,18 +98,21 @@ const makeField = (key, fieldConfig, rawValue, decimal, manualFields) => {
         const needsFix = (amountStr.slice(-3).indexOf(thousands) !== -1 || amountStr.slice(0, -3).indexOf(decimal) !== -1);
         const outValue = (needsFix) ? amountStr.replace(decimal, '').replace(thousands, decimal) : amountStr;
         outObj[key] = outValue;
-        return outObj;
+        if (!parseFloat(outValue)) error = { field: key, error: 'csv veld bevat geen bedrag' }
+        return [outObj, error];
     }
-    if (fieldConfig.fromManual) {
-        if (!fieldConfig.key || !manualFields[fieldConfig.key]) throw new Error('invalid fromManual config');
-        outObj[key] = manualFields[fieldConfig.key];
-        return outObj;
+    if (fieldConfig.fromSystem) {
+        if (!fieldConfig.key || !systemFields[fieldConfig.key]) throw new Error('invalid fromSystem config');
+        outObj[key] = systemFields[fieldConfig.key];
+        return [outObj, error];
     }
 }
 
-const makeFirstLast = (config, csvArr) => {
+const makeFirstLast = (config, csvArr, errors) => {
     const headers = csvArr[0];
     var outObj = {};
+    let newErrors = errors;
+    let newFieldErrors = [];
     for (const key in config) {
         if (config.hasOwnProperty(key)) {
             const fieldConfig = config[key];
@@ -115,12 +120,21 @@ const makeFirstLast = (config, csvArr) => {
                 const rowIndex = (fieldConfig.first) ? 1 : csvArr.length - 1;
                 if (!fieldConfig.field) throw new Error('invalid first/last config');
                 const index = headers.indexOf(fieldConfig.field);
-                if (index === -1) throw new Error('invalid first/last config');
+                if (index === -1) {
+                    const newError = { field: key, error: `veld ${fieldConfig.field} niet gevonden in csv` }
+                    newFieldErrors.push(newError);
+                }
                 outObj[key] = csvArr[rowIndex][index];
             }
         }
     }
-    return outObj;
+    if (newFieldErrors.length > 0) {
+        let field_errors = (!newErrors || !newErrors.field_errors) ? 
+            newFieldErrors : [...errors.field_errors, ...newFieldErrors];
+        newErrors = Object.assign({}, newErrors, { field_errors });
+    }
+
+    return [ outObj, newErrors];
 }
 
 
@@ -151,6 +165,18 @@ const putDate = ({ y, m, d }, format) => {
         .replace('dd', d);
 }
 
+const nowDate = (format) => {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    return putDate(
+        {
+            y: now.getFullYear(),
+            m: (month < 10) ? '0' + month : month,
+            d: (day < 10) ? '0' + day : day
+        }, format);
+}
+
 const objFromArr = (arr) => {
     var outObj = Object.assign({}, ['', ...arr])
     delete outObj['0'];
@@ -159,5 +185,5 @@ const objFromArr = (arr) => {
 
 exports.makeDetails = makeDetails;
 exports.objFromArr = objFromArr;
-exports.makeManual = makeManual;
+exports.makeSystemFields = makeSystemFields;
 exports.makeFirstLast = makeFirstLast;

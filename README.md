@@ -13,8 +13,8 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     ```json
     {
         "financial_account_id": { "system": true },
-        "reference": { "manual" : true },
-        "official_date": { "manual" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
+        "reference": { "system" : true },
+        "official_date": { "system" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
         "official_balance": { "field": "Saldo", "last": true },
         "details": {
             "date": { "field": "Datum", "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
@@ -34,7 +34,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "validated": true
     }
     ```
-    * If the file does not (yet) exist, a generic json file without mappings will be returned
+    * If the file does not (yet) exist, a default json file without mappings will be returned
     * Error response if account id is not a valid Moneybird account id
 * `POST /config/[account id]` to create/update mappings
     * `[account id]` must be a valid Moneybird account id (is checked)
@@ -65,13 +65,33 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     ```json
     {
         "csv_filename": "KBC1213 201907.csv",
-        "csv_content": "datum; valuta; ...\n20190708; EUR;...",
-        "config": "bank-config-[account id].json",
-        "reference": "KBCSCKS",
-        "official_date": "2019-07-27"
+        "csv_content": "...(csv string)...",
+        "convert_only": false
     }
     ```
-    * returns a json file with converted lines from csv file
+    * csv file will saved.
+    * if the related config file does not yet exist, the default config will be used and saved (but will produce error, since default does not contain mappings)
+    * with the config, a conversion will be attempted. If successful, 
+        * resulting json will be saved
+        * the resulting json will be sent to moneybird (unless flag convert_only is set)
+        * results from moneybird will be saved (validation of config + record of submission to moneybird)
+        * if results from moneybird are OK, new summaries will be returned in response (otherwise error)
+    * error message structure (strings contain possible errors, fields only if there are errors) for response:
+    ```json
+    {
+        "csv_read_error": "bestandsnaam is niet .csv | bestand bevat geen (leesbare) regels | kan regels niet lezen",
+        "field_errors": [
+            { "field": "date", "error": "verplicht csv bronveld ontbreekt | veld ... niet gevonden in csv | ongeldig datum-formaat" },
+            { "field": "message", "error": "verplicht csv bronveld ontbreekt | veld ... niet gevonden in csv" },
+            { "field": "amount", "error": "verplicht csv bronveld ontbreekt | veld ... niet gevonden in csv | csv veld bevat geen bedrag "}
+            { "field": "valutation_date", "error": "veld ... niet gevonden in csv | ongeldig datum-formaat" },
+            { "field": "code | contra_account_name | contra_account_number | account_servicer_transaction_id", 
+                "error": "veld ... niet gevonden in csv"},
+            { "official_balance": "veld ... niet gevonden in csv | csv veld bevat geen bedrag" }
+        ],
+        "moneybird_error": "(message from moneybird)"
+    }
+    ```
 
 `/files/[account id][/filename]` file management for converted files/ valid json files, in public bucket
 * `GET` with filename returns file, without filename will return list of file summaries, in json format
