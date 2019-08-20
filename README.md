@@ -79,15 +79,22 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * error message structure (strings contain possible errors, fields only if there are errors) for response:
     ```json
     {
-        "csv_read_error": "bestandsnaam is niet .csv | bestand bevat geen (leesbare) regels | kan regels niet lezen",
+        "csv_read_errors": [ "bestandsnaam is niet .csv", "bestand bevat geen (leesbare) regels","kan regels niet lezen"],
         "field_errors": [
-            { "field": "date", "error": "verplicht csv bronveld ontbreekt | veld ... niet gevonden in csv | ongeldig datum-formaat" },
-            { "field": "message", "error": "verplicht csv bronveld ontbreekt | veld ... niet gevonden in csv" },
-            { "field": "amount", "error": "verplicht csv bronveld ontbreekt | veld ... niet gevonden in csv | csv veld bevat geen bedrag "}
-            { "field": "valutation_date", "error": "veld ... niet gevonden in csv | ongeldig datum-formaat" },
+            { "field": "date", "errors": [
+                "verplicht csv bronveld ontbreekt",
+                "veld ... niet gevonden in csv",
+                "ongeldig datum-formaat"] 
+            },
+            { "field": "message", "errors": ["verplicht csv bronveld ontbreekt", "veld ... niet gevonden in csv"] },
+            { "field": "amount", "errors": [
+                "verplicht csv bronveld ontbreekt", 
+                "veld ... niet gevonden in csv", 
+                "csv veld bevat geen bedrag" ]}
+            { "field": "valutation_date", "errors": ["veld ... niet gevonden in csv", "ongeldig datum-formaat"] },
             { "field": "code | contra_account_name | contra_account_number | account_servicer_transaction_id", 
-                "error": "veld ... niet gevonden in csv"},
-            { "official_balance": "veld ... niet gevonden in csv | csv veld bevat geen bedrag" }
+                "errors": ["veld ... niet gevonden in csv"]},
+            { "field": "official_balance", "errors": ["veld ... niet gevonden in csv", "csv veld bevat geen bedrag"] }
         ],
         "moneybird_error": "(message from moneybird)"
     }

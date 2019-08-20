@@ -4,7 +4,7 @@ const makeDetails = (csvArr, config, systemFields, errors) => {
     let outArr = [];
     let newErrors = errors;
 
-    for (const csvRow of csvArr) {
+    for (const csvRow of csvArr.slice(1)) {
         let outObj = {};
         for (const key in config.details) {
             const fieldConfig = config.details[key];
@@ -14,19 +14,11 @@ const makeDetails = (csvArr, config, systemFields, errors) => {
                     if (!fieldConfig.key || !systemFields[fieldConfig.key]) throw new Error('invalid fromSystem config');
                     rawValue = systemFields[fieldConfig.key]
                 } else {
-                    [error, rawValue] = makeRawValue(key, fieldConfig, headers, csvRow);
-                    if (error) {
-                        let field_errors = (!newErrors || !newErrors.field_errors) ? [] : [...errors.field_errors];
-                        field_errors.push(error);
-                        newErrors = Object.assign({}, newErrors, { field_errors });
-                    }
+                    [rawValue, error] = makeRawValue(key, fieldConfig, headers, csvRow);
+                    if (error) newErrors = addFieldError(error, newErrors);
                 }
-                [error, newField] = makeField(key, fieldConfig, rawValue, decimal, systemFields)
-                if (error) {
-                    const field_errors = (!newErrors || !newErrors.field_errors) ? [] : [...errors.field_errors];
-                    field_errors.push(error);
-                    newErrors = Object.assign({}, newErrors, { field_errors });
-                }
+                [newField, error] = makeField(key, fieldConfig, rawValue, decimal, systemFields)
+                if (error) newErrors = addFieldError(error, newErrors);
                 outObj = Object.assign(outObj, newField);
             }
         }
@@ -98,7 +90,7 @@ const makeField = (key, fieldConfig, rawValue, decimal, systemFields) => {
         const needsFix = (amountStr.slice(-3).indexOf(thousands) !== -1 || amountStr.slice(0, -3).indexOf(decimal) !== -1);
         const outValue = (needsFix) ? amountStr.replace(decimal, '').replace(thousands, decimal) : amountStr;
         outObj[key] = outValue;
-        if (!parseFloat(outValue)) error = { field: key, error: 'csv veld bevat geen bedrag' }
+        if (!parseFloat(outValue)) error = { field: key, error: `csv veld bevat geen bedrag, maar "${outValue}"` }
         return [outObj, error];
     }
     if (fieldConfig.fromSystem) {
@@ -112,7 +104,6 @@ const makeFirstLast = (config, csvArr, errors) => {
     const headers = csvArr[0];
     var outObj = {};
     let newErrors = errors;
-    let newFieldErrors = [];
     for (const key in config) {
         if (config.hasOwnProperty(key)) {
             const fieldConfig = config[key];
@@ -122,19 +113,14 @@ const makeFirstLast = (config, csvArr, errors) => {
                 const index = headers.indexOf(fieldConfig.field);
                 if (index === -1) {
                     const newError = { field: key, error: `veld ${fieldConfig.field} niet gevonden in csv` }
-                    newFieldErrors.push(newError);
+                    newErrors = addFieldError(newError, newErrors);
                 }
                 outObj[key] = csvArr[rowIndex][index];
             }
         }
     }
-    if (newFieldErrors.length > 0) {
-        let field_errors = (!newErrors || !newErrors.field_errors) ? 
-            newFieldErrors : [...errors.field_errors, ...newFieldErrors];
-        newErrors = Object.assign({}, newErrors, { field_errors });
-    }
 
-    return [ outObj, newErrors];
+    return [outObj, newErrors];
 }
 
 
@@ -183,6 +169,40 @@ const objFromArr = (arr) => {
     return outObj;
 }
 
+// adds an error { field, value } to a list { field, [values] }
+exports.addError = (newErr, oldErr) => {
+    let outObj = {};
+    const newKey = Object.keys(newErr)[0];
+    if (!oldErr) {
+        outObj[newKey] = [ newErr[newKey] ]
+    } else {
+        let outObj = Object.assign({}, oldErr);
+        if (oldErr[newKey]) {
+            outObj[newkey] = [...outObj[newKey], newErr[newKey]]
+        } else {
+            outObj[newKey] = [newErr[newKey]]
+        }
+    }
+    return outObj;
+}
+
+const addFieldError = (newFieldError, oldErrors) => {
+    const newFieldErrors = { field: newFieldError.field, errors: [newFieldError.error] };
+    if (!oldErrors) return { field_errors: [newFieldErrors] }
+    if (!oldErrors.field_errors) return Object.assign({}, oldErrors, { field_errors: [newFieldErrors] });
+    let priorFieldError = false;
+    let newFieldSet = oldErrors.field_errors.map(item => {
+        if (item.field !== newFieldError.field) return item;
+        priorFieldError = true;
+        return Object.assign({}, item, { errors: [...new Set([...item.errors, newFieldError.error])] })
+    });
+    if (!priorFieldError) newFieldSet.push(newFieldErrors);
+    return Object.assign({}, oldErrors, { field_errors: newFieldSet })
+}
+
+exports.arrayToCSV = (arr, separator) => {
+    return arr.map(row => row.join(separator)).join('\n');
+}
 exports.makeDetails = makeDetails;
 exports.objFromArr = objFromArr;
 exports.makeSystemFields = makeSystemFields;

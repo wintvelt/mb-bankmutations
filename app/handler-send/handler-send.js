@@ -35,6 +35,7 @@ const sendSwitchHandler = function (event) {
                         console.log('got mutations');
                         // post the data to moneybird + get sumsfile
                         // return data;
+                        console.log(sumsfile);
                         return Promise.all([
                             postMoneyData('/financial_statements', event.headers.Authorization, data),
                             getFile(sumsfile, privateBucket)
@@ -43,6 +44,7 @@ const sendSwitchHandler = function (event) {
                     .then(dataList => {
                         // udpate sumsfile and post + get raw list from directory
                         // return dataList;
+                        console.log('got data')
                         const mbData = JSON.parse(dataList[0]);
                         const oldSummaries = dataList[1];
                         const newSummary = {

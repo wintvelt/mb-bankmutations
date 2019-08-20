@@ -1,9 +1,11 @@
 const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
 const { getFile, putPromise } = require('../handler-files/s3functions');
-const { makeDetails, makeSystemFields, makeFirstLast, objFromArr } = require('./convert-helpers');
+const { makeDetails, makeSystemFields, makeFirstLast,
+    objFromArr, arrayToCSV, addError } = require('./convert-helpers');
 const { validate } = require('../handler-config/config-helpers');
 const { privateBucket } = require('../SECRETS');
+const { sendHandler } = require('../handler-send/handler-send');
 
 exports.convertHandler = function (event) {
     const auth = event.headers.Authorization;
@@ -18,11 +20,13 @@ exports.convertHandler = function (event) {
 const convertSwitchHandler = (event) => {
     const pathParams = event.path.split('/');
     const accountID = pathParams[2];
-    const configFilename = accountID + '/' + event.body.config;
+    const configFilename = `${accountID}/bank-config-${accountID}.json`;
 
     switch (event.httpMethod) {
         case 'POST':
             if (!event.body) return response(403, 'bad request');
+            const filename = event.body.csv_filename.split('.');
+
             return getFile(configFilename, privateBucket)
                 .then(config => {
                     let errors = null;
@@ -31,11 +35,12 @@ const convertSwitchHandler = (event) => {
                     if (!event.body.csv_filename) throw new Error('csv_filename missing');
                     // check if required (detail) fields are mapped
                     const reqFieldErrors = validate(config);
-                    if (reqFieldErrors.length > 0) errors = { field_errors: reqFieldErrors }
-                    const filename = event.body.csv_filename.split('.');
+                    reqFieldErrors.forEach(error => {
+                        errors = addFieldError(error, errors);
+                    });
                     if (!filename[1] || filename[1] !== 'csv') {
-                        errors = Object.assign([], errors, { csv_read_error: 'bestandsnaam is niet .csv' })
-                        return [errors, null]; // abort at this point
+                        errors = addError({ csv_read_errors: 'bestandsnaam is niet .csv' }, errors)
+                        return errors; // abort at this point
                     }
                     let csvArr = event.body.csv_content;
                     if (typeof event.body.csv_content === 'string') {
@@ -44,7 +49,7 @@ const convertSwitchHandler = (event) => {
                         const arr = csvString.split(/\n|\r/); // split string into lines
                         arr = arr.filter(line => (line.length > 0)); // remove empty lines if needed
                         if (arr.length < 2) {
-                            errors = Object.assign([], errors, { csv_read_error: 'bestand bevat geen (leesbare) regels' })
+                            errors = addError({ csv_read_errors: 'bestand bevat geen (leesbare) regels' }, errors)
                         }
                         csvArr = arr.map(it => {
                             let row;
@@ -55,12 +60,12 @@ const convertSwitchHandler = (event) => {
                             }
                             if (!row[row.length - 1]) row = row.slice(0, -1); // remove last empty fields if needed
                             if (Math.abs(row.length - arr[0].length) > 2) {
-                                errors = Object.assign([], errors, { csv_read_error: 'kan regels niet lezen' })
+                                errors = addError({ csv_read_errors: 'kan regels niet lezen' }, errors)
                             }
                             return row;
                         });
                     }
-                    if (errors) return [errors, null]; // abort if csv cannot be read
+                    if (errors) return errors; // abort if csv cannot be read
 
                     let systemFields, detailsArr, firstLastFields;
                     console.log('check and fill system fields');
@@ -71,20 +76,24 @@ const convertSwitchHandler = (event) => {
                     [firstLastFields, errors] = makeFirstLast(config, csvArr, errors);
                     const csvSave = {
                         Bucket: privateBucket,
-                        Key: accountID + '/' + event.body.filename,
+                        Key: accountID + '/' + event.body.csv_filename,
                         Body: (typeof event.body.csv_content === 'string') ?
-                            event.body.csv_content : JSON.stringify(event.body.csv_content),
+                            event.body.csv_content : arrayToCSV(event.body.csv_content, config.separator),
                         ContentType: 'text/csv'
                     }
-                    if (errors) return [errors, putPromise(csvSave)]; // save csv and abort if there are errors
-
+                    if (errors) {
+                        return errors; // save csv and abort if there are errors
+                    }
                     console.log('create output object');
                     const details = { 'financial_mutations_attributes': objFromArr(detailsArr) };
-                    const outObj = Object.assign({},
-                        { financial_account_id: accountID },
-                        manualFields,
-                        firstLastFields,
-                        details);
+                    const outObj = {
+                        financial_statement:
+                            Object.assign({},
+                                { financial_account_id: accountID },
+                                systemFields,
+                                firstLastFields,
+                                details)
+                    };
                     const newConfig = patchObj(config, { validated: true })
                     const configSave = {
                         Bucket: privateBucket,
@@ -92,14 +101,31 @@ const convertSwitchHandler = (event) => {
                         Body: JSON.stringify(newConfig),
                         ContentType: 'application/json'
                     }
+                    const jsonSave = {
+                        Bucket: privateBucket,
+                        Key: accountID + '/' + filename[0] + '.json',
+                        Body: JSON.stringify(outObj),
+                        ContentType: 'application/json'
+                    }
+                    const sendEvent = {
+                        body: { filename: filename[0] + '.json' },
+                        path: "/send/" + accountID,
+                        httpMethod: "POST",
+                        isBase64Encoded: false,
+                        headers: event.headers
+                    }
                     return Promise.all([
-                        { financial_statement: outObj },
                         putPromise(configSave),
-                        putPromise(csvSave)
+                        putPromise(csvSave),
+                        putPromise(jsonSave)
                     ])
+                        .then(_ => {
+                            return (event.body.convert_only) ?
+                                outObj : sendHandler(sendEvent)
+                        })
                 })
-                .then(dataList => {
-                    return response(200, dataList[0]);
+                .then(res => {
+                    return response(200, (res.body) ? res.body : res);
                 })
                 .catch(err => response(500, err.message));
 
