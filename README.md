@@ -61,7 +61,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
 * `POST /convert/[account id]`
     * `[account id]` must be a valid Moneybird account id (is checked)
     * request header must contain auth Bearer token
-    * body must contain:
+    * body structure is:
     ```json
     {
         "csv_filename": "KBC1213 201907.csv",
@@ -69,17 +69,17 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "convert_only": false
     }
     ```
-    * csv file will saved.
-    * if the related config file does not yet exist, the default config will be used and saved (but will produce error, since default does not contain mappings)
+    * if `csv_content` is provided, the csv file will saved. Without `csv_content`, the csv file needs to exist already.
+    * if the related config file does not yet exist, the default config will be used (but will produce error, since default does not contain mappings)
     * with the config, a conversion will be attempted. If successful, 
         * resulting json will be saved
         * the resulting json will be sent to moneybird (unless flag convert_only is set)
         * results from moneybird will be saved (validation of config + record of submission to moneybird)
-        * if results from moneybird are OK, new summaries will be returned in response (otherwise error)
+        * if results from moneybird are OK, json-file of converted csv will be returned in response (otherwise error)
     * error message structure (strings contain possible errors, fields only if there are errors) for response:
     ```json
-    {
-        "csv_read_errors": [ "bestandsnaam is niet .csv", "bestand bevat geen (leesbare) regels","kan regels niet lezen"],
+    { "errors": {
+        "csv_read_errors": [ "bestandsnaam is niet .csv", "bestand bevat geen (leesbare) regels", "kan regels niet lezen"],
         "field_errors": [
             { "field": "date", "errors": [
                 "verplicht csv bronveld ontbreekt",
@@ -97,7 +97,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
             { "field": "official_balance", "errors": ["veld ... niet gevonden in csv", "csv veld bevat geen bedrag"] }
         ],
         "moneybird_error": "(message from moneybird)"
-    }
+    }}
     ```
 
 `/files/[account id][/filename]` file management for converted files/ valid json files, in public bucket
@@ -118,7 +118,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * request header must contain auth Bearer token
     * body needs to be string to save (could be stringified json)
 
-* `DELETE` only valid with filename, body should have { filename } too.
+* `DELETE` only valid with filename, body should have { filename } too. (filename without path)
 
 `/send`to send a file to moneybird
 * `POST send/[account id]`

@@ -5,6 +5,7 @@ const { getMoneyData } = require('./helpers-moneybird');
 // returns a promise, which resolves to true if OK, otherwise throws error
 exports.checkAccount = function (accountID, auth) {
     return getMoneyData('/financial_accounts.json', auth)
+        .catch(err => {throw new Error('Moneybird said: '+err.message) })
         .then(accountList => {
             const accountsFound = JSON.parse(accountList).filter(it => (it.id === accountID));
             if (accountsFound.length === 1) return true;

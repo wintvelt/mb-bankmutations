@@ -19,8 +19,13 @@ const getPromise = function (params) {
                 } else {
                     if (data.Body) {
                         const buffer = Buffer.from(data.Body);
-                        const newData = JSON.parse(buffer.toString('utf8'));
-                        resolve(newData);
+                        try {
+                            const newData = JSON.parse(buffer.toString('utf8'));
+                            resolve(newData);                                
+                        } catch (error) {
+                            const newData = buffer.toString('utf8');
+                            resolve(newData);
+                        }
                     }
                     resolve(data);
                 }

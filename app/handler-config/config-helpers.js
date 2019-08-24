@@ -22,7 +22,7 @@ exports.validate = (config) => {
 exports.emptyMapping = {
     "financial_account_id": { "system": true }, // system generated, = account id from request path
     "reference": { "system": true }, // system generated = filename (without extension)
-    "official_date": { "system": true }, // system generated = date of creation
+    "official_date": { "system" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // creation date
     "official_balance": null,
     "details": {
         "date": null,

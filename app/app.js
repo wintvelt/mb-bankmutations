@@ -14,10 +14,13 @@ exports.handler = async function (event) {
     const newHeaders = Object.assign({}, event.headers, { Authorization: auth });
     let newBody = null;
     try {
-        if (event.body && typeof event.body === 'string') newBody = JSON.parse(event.body);
+        if (event.body && typeof event.body === 'string') {
+            newBody = JSON.parse(event.body);
+        };
     } catch (_) {
     }
-    if (event.body) newBody = event.body;
+    if (!newBody && event.body) newBody = Object.assign({},event.body);
+    console.log('body type is: '+typeof newBody);
     const newEvent = Object.assign({}, event, { body: newBody }, { headers: newHeaders });
 
     const pathList = event.path.split('/');

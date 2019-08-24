@@ -1,6 +1,6 @@
 const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
-const { getFile, putPromise } = require('../handler-files/s3functions');
+const { getFile, putPromise, getPromise } = require('../handler-files/s3functions');
 const { makeDetails, makeSystemFields, makeFirstLast,
     objFromArr, arrayToCSV, addError } = require('./convert-helpers');
 const { validate } = require('../handler-config/config-helpers');
@@ -18,40 +18,46 @@ exports.convertHandler = function (event) {
 }
 
 const convertSwitchHandler = (event) => {
+    console.log('start conversion');
     const pathParams = event.path.split('/');
     const accountID = pathParams[2];
     const configFilename = `${accountID}/bank-config-${accountID}.json`;
 
     switch (event.httpMethod) {
         case 'POST':
-            if (!event.body) return response(403, 'bad request');
+            if (!event.body || !event.body.csv_filename) return response(403, 'bad request');
             const filename = event.body.csv_filename.split('.');
+            const fullFilename = `${accountID}/${event.body.csv_filename}`;
+            console.log(fullFilename);
 
-            return getFile(configFilename, privateBucket)
-                .then(config => {
+            return Promise.all([
+                getPromise({ Bucket: privateBucket, Key: configFilename }),
+                event.body.csv_content || getPromise({ Bucket: privateBucket, Key: fullFilename })
+            ])
+                .then(([config, csv_content]) => {
+                    console.log('got config');
                     let errors = null;
                     if (Array.isArray(config)) throw new Error('missing config file');
-                    if (!event.body.csv_content) throw new Error('csv_content missing');
-                    if (!event.body.csv_filename) throw new Error('csv_filename missing');
                     // check if required (detail) fields are mapped
                     const reqFieldErrors = validate(config);
                     reqFieldErrors.forEach(error => {
                         errors = addFieldError(error, errors);
                     });
-                    if (!filename[1] || filename[1] !== 'csv') {
+                    if (!filename[1] || filename[1].toLowerCase() !== 'csv') {
                         errors = addError({ csv_read_errors: 'bestandsnaam is niet .csv' }, errors)
+                        console.log('error met bestandsnaam');
                         return errors; // abort at this point
                     }
-                    let csvArr = event.body.csv_content;
-                    if (typeof event.body.csv_content === 'string') {
+                    let csv = csv_content;
+                    if (typeof csv === 'string') {
                         // need to parse csv string first
                         const separator = config.separator || ';'
-                        const arr = csvString.split(/\n|\r/); // split string into lines
+                        let arr = csv.split(/\n|\r/); // split string into lines
                         arr = arr.filter(line => (line.length > 0)); // remove empty lines if needed
                         if (arr.length < 2) {
                             errors = addError({ csv_read_errors: 'bestand bevat geen (leesbare) regels' }, errors)
                         }
-                        csvArr = arr.map(it => {
+                        csv = arr.map((it, i) => {
                             let row;
                             try {
                                 row = JSON.parse('[' + it + ']');
@@ -59,30 +65,37 @@ const convertSwitchHandler = (event) => {
                                 row = it.split(separator);
                             }
                             if (!row[row.length - 1]) row = row.slice(0, -1); // remove last empty fields if needed
-                            if (Math.abs(row.length - arr[0].length) > 2) {
-                                errors = addError({ csv_read_errors: 'kan regels niet lezen' }, errors)
+                            if (row.length > arr[0].length) {
+                                errors = addError({ csv_read_errors: `regels lijken te veel velden te hebben` }, errors)
                             }
                             return row;
                         });
                     }
-                    if (errors) return errors; // abort if csv cannot be read
+                    if (errors) {
+                        console.log('er zijn andere errors');
+                        return errors; // abort if csv cannot be read
+                    }
 
                     let systemFields, detailsArr, firstLastFields;
                     console.log('check and fill system fields');
                     [systemFields, errors] = makeSystemFields(config, filename[0], accountID, errors);
                     console.log('check and fill details');
-                    [detailsArr, errors] = makeDetails(csvArr, config, systemFields, errors);
+                    [detailsArr, errors] = makeDetails(csv, config, systemFields, errors);
                     console.log('check and fill global calculated fields');
-                    [firstLastFields, errors] = makeFirstLast(config, csvArr, errors);
+                    [firstLastFields, errors] = makeFirstLast(config, csv, errors);
+                    console.log('made firstlast fields');
                     const csvSave = {
                         Bucket: privateBucket,
                         Key: accountID + '/' + event.body.csv_filename,
-                        Body: (typeof event.body.csv_content === 'string') ?
-                            event.body.csv_content : arrayToCSV(event.body.csv_content, config.separator),
+                        Body: (typeof csv_content === 'string') ?
+                            csv_content : arrayToCSV(csv_content, config.separator),
                         ContentType: 'text/csv'
                     }
-                    if (errors) {
-                        return errors; // save csv and abort if there are errors
+                    const result = { errors: errors && errors.errors, csv: csv };
+                    if (errors) { // save csv if needed and abort if there are errors
+                        return (event.body.csv_content) ?
+                            putPromise(csvSave).then(_ => result)
+                            : result;
                     }
                     console.log('create output object');
                     const details = { 'financial_mutations_attributes': objFromArr(detailsArr) };
@@ -120,12 +133,14 @@ const convertSwitchHandler = (event) => {
                         putPromise(jsonSave)
                     ])
                         .then(_ => {
+                            console.log('saved files after convert');
                             return (event.body.convert_only) ?
-                                outObj : sendHandler(sendEvent)
+                                result : sendHandler(sendEvent)
+                                .then(res => Object.assign({},result, { money_bird_res: res.statusCode }))
                         })
                 })
                 .then(res => {
-                    return response(200, (res.body) ? res.body : res);
+                    return response(200, res);
                 })
                 .catch(err => response(500, err.message));
 

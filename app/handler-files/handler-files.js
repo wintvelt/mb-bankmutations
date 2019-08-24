@@ -28,7 +28,6 @@ const filesSwitchHandler = function (event) {
                 }
                 return getPromise(getParams)
                     .then(data => {
-                        console.log(typeof data);
                         return response(200, data);
                     })
                     .catch(err => response(500, 'file not found'));

@@ -164,40 +164,42 @@ const nowDate = (format) => {
 }
 
 const objFromArr = (arr) => {
-    var outObj = Object.assign({}, ['', ...arr])
+    let outObj = Object.assign({}, ['', ...arr])
     delete outObj['0'];
     return outObj;
 }
 
 // adds an error { field, value } to a list { field, [values] }
-exports.addError = (newErr, oldErr) => {
-    let outObj = {};
-    const newKey = Object.keys(newErr)[0];
-    if (!oldErr) {
-        outObj[newKey] = [ newErr[newKey] ]
+exports.addError = (newError, oldErrors) => {
+    let outErrors = {};
+    const newKey = Object.keys(newError)[0];
+    if (!oldErrors) {
+        outErrors[newKey] = [ newError[newKey] ]
+        console.log('creating error');
     } else {
-        let outObj = Object.assign({}, oldErr);
-        if (oldErr[newKey]) {
-            outObj[newkey] = [...outObj[newKey], newErr[newKey]]
+        outErrors = Object.assign({}, oldErrors.errors);
+        if (oldErrors[newKey]) {
+            outErrors[newKey] = [...new Set([...outErrors[newKey], newError[newKey]])]
         } else {
-            outObj[newKey] = [newErr[newKey]]
+            outErrors[newKey] = [newError[newKey]]
         }
     }
-    return outObj;
+    return { errors: outObj };
 }
 
 const addFieldError = (newFieldError, oldErrors) => {
+    console.log(`field ${newFieldError.field} has error ${newFieldError.error}`);
     const newFieldErrors = { field: newFieldError.field, errors: [newFieldError.error] };
-    if (!oldErrors) return { field_errors: [newFieldErrors] }
-    if (!oldErrors.field_errors) return Object.assign({}, oldErrors, { field_errors: [newFieldErrors] });
+    if (!oldErrors) return { errors: { field_errors: [newFieldErrors] }};
+    if (!oldErrors.errors.field_errors) return { errors: Object.assign({}, oldErrors.errors, { field_errors: [newFieldErrors] })};
     let priorFieldError = false;
-    let newFieldSet = oldErrors.field_errors.map(item => {
+    let newFieldSet = oldErrors.errors.field_errors.map(item => {
         if (item.field !== newFieldError.field) return item;
         priorFieldError = true;
         return Object.assign({}, item, { errors: [...new Set([...item.errors, newFieldError.error])] })
     });
     if (!priorFieldError) newFieldSet.push(newFieldErrors);
-    return Object.assign({}, oldErrors, { field_errors: newFieldSet })
+    return { errors: Object.assign({}, oldErrors.errors, { field_errors: newFieldSet })}
 }
 
 exports.arrayToCSV = (arr, separator) => {
