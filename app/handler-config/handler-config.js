@@ -30,10 +30,12 @@ const configSwitchHandler = (event) => {
 
         case 'POST':
             if (!event.body) return response(403, 'bad request');
+            console.log(`config body type is : ${typeof event.body}`);
+            const newBody = {...event.body, validated: false};
             const postParams = {
                 Bucket: privateBucket,
                 Key: filename,
-                Body: JSON.stringify(event.body),
+                Body: JSON.stringify(newBody),
                 ContentType: 'application/json'
             }
             return putPromise(postParams)
