@@ -21,13 +21,14 @@ const filesSwitchHandler = function (event) {
         case 'GET':
             if (pathParams.length === 4) {
                 const filename = pathParams[2] + '/' + pathParams[3];
-                console.log(filename);
                 const getParams = {
                     Bucket: privateBucket,
                     Key: filename
                 }
+                console.log('getting '+filename);
                 return getPromise(getParams)
                     .then(data => {
+                        console.log('gotdata');
                         return response(200, data);
                     })
                     .catch(err => response(500, 'file not found'));

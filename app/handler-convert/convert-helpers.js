@@ -40,7 +40,7 @@ const makeRawValue = (key, fieldConfig, headers, csvRow) => {
     let error = null;
     const fields = (typeof fieldConfig === 'string') ? [fieldConfig]
         : (typeof fieldConfig.field === 'string') ? [fieldConfig.field]
-            : fieldConfig.field;
+            : (Array.isArray(fieldConfig.field)) ? fieldConfig.field : [];
     let notFoundFields = [];
     const value = fields
         .map((field) => {
@@ -174,7 +174,7 @@ exports.addError = (newError, oldErrors) => {
     let outErrors = {};
     const newKey = Object.keys(newError)[0];
     if (!oldErrors) {
-        outErrors[newKey] = [ newError[newKey] ]
+        outErrors[newKey] = [newError[newKey]]
         console.log('creating error');
     } else {
         outErrors = Object.assign({}, oldErrors.errors);
@@ -190,8 +190,8 @@ exports.addError = (newError, oldErrors) => {
 const addFieldError = (newFieldError, oldErrors) => {
     console.log(`field ${newFieldError.field} has error ${newFieldError.error}`);
     const newFieldErrors = { field: newFieldError.field, errors: [newFieldError.error] };
-    if (!oldErrors) return { errors: { field_errors: [newFieldErrors] }};
-    if (!oldErrors.errors.field_errors) return { errors: Object.assign({}, oldErrors.errors, { field_errors: [newFieldErrors] })};
+    if (!oldErrors) return { errors: { field_errors: [newFieldErrors] } };
+    if (!oldErrors.errors.field_errors) return { errors: Object.assign({}, oldErrors.errors, { field_errors: [newFieldErrors] }) };
     let priorFieldError = false;
     let newFieldSet = oldErrors.errors.field_errors.map(item => {
         if (item.field !== newFieldError.field) return item;
@@ -199,7 +199,7 @@ const addFieldError = (newFieldError, oldErrors) => {
         return Object.assign({}, item, { errors: [...new Set([...item.errors, newFieldError.error])] })
     });
     if (!priorFieldError) newFieldSet.push(newFieldErrors);
-    return { errors: Object.assign({}, oldErrors.errors, { field_errors: newFieldSet })}
+    return { errors: Object.assign({}, oldErrors.errors, { field_errors: newFieldSet }) }
 }
 
 exports.arrayToCSV = (arr, separator) => {
@@ -209,3 +209,4 @@ exports.makeDetails = makeDetails;
 exports.objFromArr = objFromArr;
 exports.makeSystemFields = makeSystemFields;
 exports.makeFirstLast = makeFirstLast;
+exports.addFieldError = addFieldError;

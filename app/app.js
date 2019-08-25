@@ -20,7 +20,7 @@ exports.handler = async function (event) {
     } catch (_) {
     }
     if (!newBody && event.body) newBody = Object.assign({},event.body);
-    console.log('body type is: '+typeof newBody);
+    console.log('request for '+event.path);
     const newEvent = Object.assign({}, event, { body: newBody }, { headers: newHeaders });
 
     const pathList = event.path.split('/');

@@ -1,11 +1,12 @@
 const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
-const { getFile, putPromise, getPromise } = require('../handler-files/s3functions');
-const { makeDetails, makeSystemFields, makeFirstLast,
+const { putPromise, getPromise } = require('../handler-files/s3functions');
+const { makeDetails, makeSystemFields, makeFirstLast, addFieldError,
     objFromArr, arrayToCSV, addError } = require('./convert-helpers');
 const { validate } = require('../handler-config/config-helpers');
 const { privateBucket } = require('../SECRETS');
 const { sendHandler } = require('../handler-send/handler-send');
+const { emptyMapping } = require('../handler-config/config-helpers');
 
 exports.convertHandler = function (event) {
     const auth = event.headers.Authorization;
@@ -25,30 +26,27 @@ const convertSwitchHandler = (event) => {
 
     switch (event.httpMethod) {
         case 'POST':
+            console.log('start convert');
             if (!event.body || !event.body.csv_filename) return response(403, 'bad request');
             const filename = event.body.csv_filename.split('.');
             const fullFilename = `${accountID}/${event.body.csv_filename}`;
             console.log(fullFilename);
 
             return Promise.all([
-                getPromise({ Bucket: privateBucket, Key: configFilename }),
+                getPromise({ Bucket: privateBucket, Key: configFilename }).catch(_ => emptyMapping),
                 event.body.csv_content || getPromise({ Bucket: privateBucket, Key: fullFilename })
             ])
                 .then(([config, csv_content]) => {
                     console.log('got config');
                     let errors = null;
                     if (Array.isArray(config)) throw new Error('missing config file');
-                    // check if required (detail) fields are mapped
-                    const reqFieldErrors = validate(config);
-                    reqFieldErrors.forEach(error => {
-                        errors = addFieldError(error, errors);
-                    });
                     if (!filename[1] || filename[1].toLowerCase() !== 'csv') {
                         errors = addError({ csv_read_errors: 'bestandsnaam is niet .csv' }, errors)
                         console.log('error met bestandsnaam');
                         return errors; // abort at this point
                     }
                     let csv = csv_content;
+                    
                     if (typeof csv === 'string') {
                         // need to parse csv string first
                         const separator = config.separator || ';'
@@ -76,6 +74,12 @@ const convertSwitchHandler = (event) => {
                         return errors; // abort if csv cannot be read
                     }
 
+                    // check if required (detail) fields are mapped
+                    console.log('check required fields mapping');
+                    const reqFieldErrors = validate(config);
+                    reqFieldErrors.forEach(error => {
+                        errors = addFieldError(error, errors);
+                    });
                     let systemFields, detailsArr, firstLastFields;
                     console.log('check and fill system fields');
                     [systemFields, errors] = makeSystemFields(config, filename[0], accountID, errors);
@@ -136,7 +140,7 @@ const convertSwitchHandler = (event) => {
                             console.log('saved files after convert');
                             return (event.body.convert_only) ?
                                 result : sendHandler(sendEvent)
-                                .then(res => Object.assign({},result, { money_bird_res: res.statusCode }))
+                                    .then(res => Object.assign({}, result, { money_bird_res: res.statusCode }))
                         })
                 })
                 .then(res => {
