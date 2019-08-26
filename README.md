@@ -14,6 +14,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     {
         "financial_account_id": { "system": true },
         "reference": { "system" : true },
+        "paypal_special": false,
         "official_date": { "system" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
         "official_balance": { "field": "Saldo", "last": true },
         "details": {
@@ -41,8 +42,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * request header must contain auth Bearer token
     * request body must contain valid json with new mapping
     * required fields (could be null, but should be included) are
-        * in main body: `reference, official_date, details`
-        * in details: `date, valutation_date, message, amount`
+        * in details: `date, message, amount`
     * saves the json file in the private bucket
     * returns the validation of the config (a json list of required field not yet mapped)
     ```json

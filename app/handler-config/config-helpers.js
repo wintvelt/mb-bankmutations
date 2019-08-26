@@ -22,6 +22,7 @@ exports.validate = (config) => {
 exports.emptyMapping = {
     "financial_account_id": { "system": true }, // system generated, = account id from request path
     "reference": { "system": true }, // system generated = filename (without extension)
+    "paypal_special": false, // flag if special paypal filter should be applied
     "official_date": { "system" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // creation date
     "official_balance": { "field": null, "firstLast": true },
     "details": {
