@@ -3,6 +3,8 @@ const { checkAccount, patchObj } = require('../helpers/helpers');
 const { putPromise, getPromise } = require('../handler-files/s3functions');
 const { makeDetails, makeSystemFields, makeFirstLast, addFieldError,
     objFromArr, arrayToCSV, addError } = require('./convert-helpers');
+const { cleanPaypal } = require('./convert-helpers-paypal');
+
 const { validate } = require('../handler-config/config-helpers');
 const { privateBucket } = require('../SECRETS');
 const { sendHandler } = require('../handler-send/handler-send');
@@ -46,7 +48,7 @@ const convertSwitchHandler = (event) => {
                         return errors; // abort at this point
                     }
                     let csv = csv_content;
-                    
+
                     if (typeof csv === 'string') {
                         // need to parse csv string first
                         const separator = config.separator || ';'
@@ -84,9 +86,10 @@ const convertSwitchHandler = (event) => {
                     console.log('check and fill system fields');
                     [systemFields, errors] = makeSystemFields(config, filename[0], accountID, errors);
                     console.log('check and fill details');
-                    [detailsArr, errors] = makeDetails(csv, config, systemFields, errors);
+                    const cleanCsv = (config.paypal_special) ? cleanPaypal(csv) : csv;
+                    [detailsArr, errors] = makeDetails(cleanCsv, config, systemFields, errors);
                     console.log('check and fill global calculated fields');
-                    [firstLastFields, errors] = makeFirstLast(config, csv, errors);
+                    [firstLastFields, errors] = makeFirstLast(config, cleanCsv, errors);
                     console.log('made firstlast fields');
                     const csvSave = {
                         Bucket: privateBucket,

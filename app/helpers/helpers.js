@@ -5,7 +5,7 @@ const { getMoneyData } = require('./helpers-moneybird');
 // returns a promise, which resolves to true if OK, otherwise throws error
 exports.checkAccount = function (accountID, auth) {
     return getMoneyData('/financial_accounts.json', auth)
-        .catch(err => {throw new Error('Moneybird said: '+err.message) })
+        .catch(err => { throw new Error('Moneybird said: ' + err.message) })
         .then(accountList => {
             const accountsFound = JSON.parse(accountList).filter(it => (it.id === accountID));
             if (accountsFound.length === 1) return true;
@@ -18,8 +18,10 @@ exports.checkAccount = function (accountID, auth) {
 // if object is (or contains) arrays of objects containing [id] key, then does array update too
 // returns (immutable) updated record
 const patchObj = (original, update, id = 'id') => {
-    if (Array.isArray(original) && Array.isArray(update)) { // both are arrays
-        if (!original[0] || !original[0][id] || !update[0] || !update[0][id]) return [...update];
+    if ((Array.isArray(original) && (Array.isArray(update) || !update))
+        || (Array.isArray(update) && (Array.isArray(original) || !original))) { // both are arrays or 1 array + empty
+        if (!original[0] || !original[0][id]) return [...update];
+        if (!update[0] || !update[0][id]) return [...original];
         var newArr = [];
         var newUpd = [...update];
         for (let i = 0; i < original.length; i++) {

@@ -28,7 +28,8 @@ exports.sumsOf = function (account) {
             const rawList = filterFiles(dataList[0], account);
             const cleanList = combineSame(rawList);
             const summaries = dataList[1].map(it => Object.assign({}, it, { filename : it.filename.split('.')[0] }));
-            return patchObj(cleanList, summaries, "filename");
+            const outObj = patchObj(cleanList, summaries, "filename");
+            return outObj;
         })
 }
 
