@@ -1,4 +1,5 @@
-// to clean up unneccessary foreign currency lines
+// to clean up unneccessary foreign currency lines,
+// also: moneybird API only accepts EURO lines in statement
 
 // to get only foreign currency with name field filled
 const CUR_KEY = 'Valuta';
