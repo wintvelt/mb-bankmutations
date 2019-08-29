@@ -48,6 +48,7 @@ const makeRawValue = (key, fieldConfig, headers, csvRow) => {
             if (fieldIndex === -1) notFoundFields.push(field);
             return csvRow[fieldIndex];
         })
+        .filter(field => field)
         .join(' - ');
     if (notFoundFields.length > 0) error = { field: key, error: `veld ${notFoundFields.join(', ')} niet gevonden in csv` };
     return [value, error];

@@ -42,43 +42,33 @@ const sendSwitchHandler = function (event) {
                             getFile(sumsfile, privateBucket)
                         ])
                     })
-                    .then(([resMB, resAWS]) => {
-                        console.log('error slipped');
-                        console.log(Object.keys(resMB));
-                        return resMB && resMB.error
+                    .then(dataList => {
+                        // udpate sumsfile and post + get raw list from directory
+                        // return dataList;
+                        console.log('got data')
+                        const mbData = JSON.parse(dataList[0]);
+                        const oldSummaries = dataList[1];
+                        const newSummary = {
+                            filename,
+                            last_sent: nowDate(),
+                            send_result_ok: (mbData.id) ? true : false,
+                            id: mbData.id
+                        }
+                        const newSummaries = patchObj(oldSummaries, [newSummary], 'filename');
+                        const postParams = {
+                            Bucket: privateBucket,
+                            Key: sumsfile,
+                            Body: JSON.stringify(newSummaries),
+                            ContentType: 'application/json'
+                        }
+                        return putPromise(postParams);
                     })
-                    // .then(dataList => {
-                    //     // udpate sumsfile and post + get raw list from directory
-                    //     // return dataList;
-                    //     console.log('got data')
-                    //     const mbData = JSON.parse(dataList[0]);
-                    //     const oldSummaries = dataList[1];
-                    //     const newSummary = {
-                    //         filename,
-                    //         last_sent: nowDate(),
-                    //         send_result_ok: (mbData.id) ? true : false,
-                    //         id: mbData.id
-                    //     }
-                    //     const newSummaries = patchObj(oldSummaries, [newSummary], 'filename');
-                    //     const postParams = {
-                    //         Bucket: privateBucket,
-                    //         Key: sumsfile,
-                    //         Body: JSON.stringify(newSummaries),
-                    //         ContentType: 'application/json'
-                    //     }
-                    //     return putPromise(postParams);
-                    // })
-                    // .then((_) => {
-                    //     return sumsOf(account);
-                    // })
+                    .then((_) => {
+                        return sumsOf(account);
+                    })
                     .then(sums => response(200, sums))
                     .catch(err => {
                         console.log('caught error');
-                        try {
-                            console.log(Object.keys(err.body));
-                        } catch (_) {
-                            console.log('attempt failed')
-                        }
                         return response(500, err.message)
                     });
             }

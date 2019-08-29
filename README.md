@@ -131,7 +131,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     }
     ```
     * with response from moneybird, will update `[account]/summary-account id.json` too, with the date sent, send result and (if OK) the moneybird ID of the statement.
-    * returns the new summaries list (see `GET files/[account]`)
+    * returns the response from Moneybird
 
 
 ---
