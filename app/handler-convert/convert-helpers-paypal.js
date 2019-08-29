@@ -19,7 +19,7 @@ const delKV = {key: 'Type', value: 'Algemeen valutaomrekening'}; // to identify 
 // one line should have euro in same + or - as original
 
 
-const cleanPaypal = (csv = [[]]) => {
+exports.cleanPaypal = (csv = [[]]) => {
     const headers = csv[0];
     const rows = csv.slice(1);
     // get all rows with foreign currency and name not empty

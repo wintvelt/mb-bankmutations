@@ -1,6 +1,6 @@
 const { privateBucket } = require('../SECRETS');
 const { checkAccount, patchObj, nowDate } = require('../helpers/helpers');
-const { getPromise, getFile, putPromise, listPromise } = require('../handler-files/s3functions');
+const { getPromise, getFile, putPromise } = require('../handler-files/s3functions');
 const { sumsOf } = require('../handler-files/helpers-files');
 const { response } = require('../helpers/helpers-api');
 const { postMoneyData } = require('../helpers/helpers-moneybird');
@@ -30,43 +30,57 @@ const sendSwitchHandler = function (event) {
                     Bucket: privateBucket,
                     Key: filename
                 }
+                console.log('sumsfile ' + sumsfile);
                 return getPromise(getMutations)
                     .then(data => {
                         console.log('got mutations');
+
                         // post the data to moneybird + get sumsfile
                         // return data;
-                        console.log(sumsfile);
                         return Promise.all([
                             postMoneyData('/financial_statements', event.headers.Authorization, data),
                             getFile(sumsfile, privateBucket)
                         ])
                     })
-                    .then(dataList => {
-                        // udpate sumsfile and post + get raw list from directory
-                        // return dataList;
-                        console.log('got data')
-                        const mbData = JSON.parse(dataList[0]);
-                        const oldSummaries = dataList[1];
-                        const newSummary = {
-                            filename,
-                            last_sent: nowDate(),
-                            send_result_ok: (mbData.id) ? true : false,
-                            id: mbData.id
-                        }
-                        const newSummaries = patchObj(oldSummaries, [newSummary], 'filename');
-                        const postParams = {
-                            Bucket: privateBucket,
-                            Key: sumsfile,
-                            Body: JSON.stringify(newSummaries),
-                            ContentType: 'application/json'
-                        }
-                        return putPromise(postParams);
+                    .then(([resMB, resAWS]) => {
+                        console.log('error slipped');
+                        console.log(Object.keys(resMB));
+                        return resMB && resMB.error
                     })
-                    .then((_) => {
-                        return sumsOf(account);
-                    })
+                    // .then(dataList => {
+                    //     // udpate sumsfile and post + get raw list from directory
+                    //     // return dataList;
+                    //     console.log('got data')
+                    //     const mbData = JSON.parse(dataList[0]);
+                    //     const oldSummaries = dataList[1];
+                    //     const newSummary = {
+                    //         filename,
+                    //         last_sent: nowDate(),
+                    //         send_result_ok: (mbData.id) ? true : false,
+                    //         id: mbData.id
+                    //     }
+                    //     const newSummaries = patchObj(oldSummaries, [newSummary], 'filename');
+                    //     const postParams = {
+                    //         Bucket: privateBucket,
+                    //         Key: sumsfile,
+                    //         Body: JSON.stringify(newSummaries),
+                    //         ContentType: 'application/json'
+                    //     }
+                    //     return putPromise(postParams);
+                    // })
+                    // .then((_) => {
+                    //     return sumsOf(account);
+                    // })
                     .then(sums => response(200, sums))
-                    .catch(err => response(500, err.message));
+                    .catch(err => {
+                        console.log('caught error');
+                        try {
+                            console.log(Object.keys(err.body));
+                        } catch (_) {
+                            console.log('attempt failed')
+                        }
+                        return response(500, err.message)
+                    });
             }
             // When there is no filename
             return response(500, 'invalid post body');

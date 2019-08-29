@@ -72,6 +72,9 @@ exports.postMoneyData = function (path, auth, data = []) {
         },
         body: body
     };
+    console.log('got to fetch');
+    console.log(base_url);
+    console.log(fullpath);
     return fetch(options);
 }
 

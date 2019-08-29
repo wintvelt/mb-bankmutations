@@ -19,7 +19,7 @@ const makeDetails = (csvArr, config, systemFields, errors) => {
                 }
                 [newField, error] = makeField(key, fieldConfig, rawValue, decimal, systemFields)
                 if (error) newErrors = addFieldError(error, newErrors);
-                outObj = Object.assign(outObj, newField);
+                if (newField[key]) outObj = Object.assign(outObj, newField);
             }
         }
         outArr.push(outObj)
@@ -90,7 +90,9 @@ const makeField = (key, fieldConfig, rawValue, decimal, systemFields) => {
         const needsFix = (amountStr.slice(-3).indexOf(thousands) !== -1 || amountStr.slice(0, -3).indexOf(decimal) !== -1);
         const outValue = (needsFix) ? amountStr.replace(decimal, '').replace(thousands, decimal) : amountStr;
         outObj[key] = outValue;
-        if (!parseFloat(outValue)) error = { field: key, error: `csv veld bevat geen bedrag, maar "${outValue}"` }
+        if (!parseFloat(outValue) && parseFloat(outValue) !== 0) {
+            error = { field: key, error: `csv veld bevat geen bedrag, maar "${outValue}"` }
+        }
         return [outObj, error];
     }
     if (fieldConfig.fromSystem) {
@@ -191,7 +193,9 @@ const addFieldError = (newFieldError, oldErrors) => {
     console.log(`field ${newFieldError.field} has error ${newFieldError.error}`);
     const newFieldErrors = { field: newFieldError.field, errors: [newFieldError.error] };
     if (!oldErrors) return { errors: { field_errors: [newFieldErrors] } };
-    if (!oldErrors.errors.field_errors) return { errors: Object.assign({}, oldErrors.errors, { field_errors: [newFieldErrors] }) };
+    if (!oldErrors.errors.field_errors) {
+        return { errors: Object.assign({}, oldErrors.errors, { field_errors: [newFieldErrors] }) }
+    };
     let priorFieldError = false;
     let newFieldSet = oldErrors.errors.field_errors.map(item => {
         if (item.field !== newFieldError.field) return item;

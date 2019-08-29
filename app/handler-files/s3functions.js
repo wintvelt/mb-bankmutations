@@ -77,9 +77,12 @@ exports.listPromise = function (params) {
 }
 
 // File promise that always resolves (empty file returns [])
-exports.getFile = function (fileName, bucket) {
-    return getPromise({ Bucket: bucket, Key: fileName })
-        .catch(err => Promise.resolve([]));
+exports.getFile = function (filename, bucket) {
+    return getPromise({ Bucket: bucket, Key: filename })
+        .catch(err => {
+            console.log(`file ${filename} not found`);
+            Promise.resolve([])
+        });
 }
 
 // File promise that always resolves (empty file returns [])
