@@ -20,7 +20,7 @@ const filesSwitchHandler = function (event) {
     switch (event.httpMethod) {
         case 'GET':
             if (pathParams.length === 4) {
-                const filename = pathParams[2] + '/' + pathParams[3];
+                const filename = pathParams[2] + '/' + decodeURI(pathParams[3]);
                 const getParams = {
                     Bucket: privateBucket,
                     Key: filename
