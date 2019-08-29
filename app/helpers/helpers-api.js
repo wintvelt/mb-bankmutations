@@ -15,7 +15,7 @@ exports.response = function (code, message) {
         }
     }
     console.log(code, msg);
-    return {
+    const respBase = {
         'isBase64Encoded': false,
         'statusCode': code,
         'headers': {
@@ -26,9 +26,9 @@ exports.response = function (code, message) {
             'Access-Control-Allow-Credentials': true,
             'Access-Control-Allow-Headers':
                 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Authorization, Origin, Accept'
-        },
-        'body': msg
+        }
     };
+    return (msg)? {...respBase, body: msg} : respBase;
 };
 
 exports.fetch = function (options) {

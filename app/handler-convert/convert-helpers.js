@@ -207,9 +207,22 @@ const addFieldError = (newFieldError, oldErrors) => {
     return { errors: Object.assign({}, oldErrors.errors, { field_errors: newFieldSet }) }
 }
 
+exports.handleMbRes = (results, res) => {
+    try {
+        parsedBody = (typeof res.body === 'string')? JSON.parse(res.body) : res.body;
+        if (!parsedBody.error || !parsedBody.error) return results;
+        const newErrors = {...results.errors, moneybird_error: parsedBody.error }
+        return {...results, errors: newErrors};
+    } catch (_) {
+        return results;
+    }
+}
+
+
 exports.arrayToCSV = (arr, separator) => {
     return arr.map(row => row.join(separator)).join('\n');
 }
+
 exports.makeDetails = makeDetails;
 exports.objFromArr = objFromArr;
 exports.makeSystemFields = makeSystemFields;

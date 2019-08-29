@@ -23,10 +23,12 @@ const configSwitchHandler = (event) => {
         case 'GET':
             return getFile(filename, privateBucket)
                 .then(config => {
-                    if (config instanceof Array && config.length === 0) return response(200, emptyMapping);
+                    if (!config || (config instanceof Array && config.length === 0)) {
+                        return response(200, emptyMapping)
+                    };
                     return response(200, config)
                 })
-                .catch(err => response(500, 'unable to save file'));
+                .catch(err => response(500, 'unable to get file'));
 
         case 'POST':
             if (!event.body) return response(403, 'bad request');

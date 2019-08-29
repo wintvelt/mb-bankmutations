@@ -1,7 +1,6 @@
 const { privateBucket } = require('../SECRETS');
 const { checkAccount, patchObj, nowDate } = require('../helpers/helpers');
 const { getPromise, getFile, putPromise } = require('../handler-files/s3functions');
-const { sumsOf } = require('../handler-files/helpers-files');
 const { response } = require('../helpers/helpers-api');
 const { postMoneyData } = require('../helpers/helpers-moneybird');
 
@@ -61,12 +60,12 @@ const sendSwitchHandler = function (event) {
                             Body: JSON.stringify(newSummaries),
                             ContentType: 'application/json'
                         }
-                        return putPromise(postParams);
+                        return Promise.all([
+                            mbData,
+                            putPromise(postParams)
+                        ]);
                     })
-                    .then((_) => {
-                        return sumsOf(account);
-                    })
-                    .then(sums => response(200, sums))
+                    .then(([mbData, awsRes]) => response(200, mbData))
                     .catch(err => {
                         console.log('caught error');
                         return response(500, err.message)

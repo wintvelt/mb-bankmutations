@@ -2,7 +2,7 @@ const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
 const { putPromise, getPromise } = require('../handler-files/s3functions');
 const { makeDetails, makeSystemFields, makeFirstLast, addFieldError,
-    objFromArr, arrayToCSV, addError } = require('./convert-helpers');
+    objFromArr, arrayToCSV, addError, handleMbRes } = require('./convert-helpers');
 const { cleanPaypal } = require('./convert-helpers-paypal');
 
 const { validate } = require('../handler-config/config-helpers');
@@ -143,7 +143,7 @@ const convertSwitchHandler = (event) => {
                             console.log('saved files after convert');
                             return (event.body.convert_only) ?
                                 result : sendHandler(sendEvent)
-                                    .then(res => Object.assign({}, result, { money_bird_res: res.statusCode }))
+                                    .then(res => handleMbRes(result, res))
                         })
                 })
                 .then(res => {

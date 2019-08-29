@@ -20,8 +20,8 @@ exports.checkAccount = function (accountID, auth) {
 const patchObj = (original, update, id = 'id') => {
     if ((Array.isArray(original) && (Array.isArray(update) || !update))
         || (Array.isArray(update) && (Array.isArray(original) || !original))) { // both are arrays or 1 array + empty
-        if (!original[0] || !original[0][id]) return [...update];
-        if (!update[0] || !update[0][id]) return [...original];
+        if (!original || !original[0] || !original[0][id]) return [...update];
+        if (!update || !update[0] || !update[0][id]) return [...original];
         var newArr = [];
         var newUpd = [...update];
         for (let i = 0; i < original.length; i++) {

@@ -81,7 +81,7 @@ exports.getFile = function (filename, bucket) {
     return getPromise({ Bucket: bucket, Key: filename })
         .catch(err => {
             console.log(`file ${filename} not found`);
-            Promise.resolve([])
+            return [];
         });
 }
 
