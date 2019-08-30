@@ -8,7 +8,7 @@ exports.checkAccount = function (accountID, auth) {
         .catch(err => { throw new Error('Moneybird said: ' + err.message) })
         .then(accountList => {
             const accountsFound = JSON.parse(accountList).filter(it => (it.id === accountID));
-            if (accountsFound.length === 1) return true;
+            if (accountsFound.length === 1) return accountsFound[0];
             throw new Error('Account does not exist');
         })
 }

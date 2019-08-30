@@ -1,0 +1,53 @@
+{
+    "financial_account_id": {
+        "system": true
+    },
+    "reference": {
+        "system": true
+    },
+    "identifier": null,
+    "paypal_special": true,
+    "official_date": {
+        "system": true,
+        "formatFrom": "dd/mm/yyyy",
+        "formatTo": "yyyy-mm-dd"
+    },
+    "official_balance": {
+        "field": null,
+        "firstLast": true
+    },
+    "details": {
+        "date": {
+            "field": "Datum",
+            "formatFrom": "dd/mm/yyyy",
+            "formatTo": "yyyy-mm-dd"
+        },
+        "valutation_date": {
+            "field": null,
+            "formatFrom": "dd/mm/yyyy",
+            "formatTo": "yyyy-mm-dd"
+        },
+        "message": {
+            "field": [
+                "Type",
+                "Item Title",
+                "Factuurnummer"
+            ],
+            "beautify": true
+        },
+        "amount": {
+            "field": "Net",
+            "amount": true
+        },
+        "code": null,
+        "contra_account_name": "Naam",
+        "contra_account_number": null,
+        "batch_reference": null,
+        "offset": null,
+        "account_servicer_transaction_id": "Transactiereferentie"
+    },
+    "separator": ";",
+    "decimal": ",",
+    "unmapped": [],
+    "validated": true
+}

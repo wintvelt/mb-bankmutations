@@ -25,6 +25,7 @@ exports.emptyMapping = {
     "paypal_special": false, // flag if special paypal filter should be applied
     "official_date": { "system" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" }, // creation date
     "official_balance": { "field": null, "firstLast": true },
+    "identifier": { "field": null },
     "details": {
         "date": { "field": null, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd"},
         "valutation_date": { "field": null, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd"},

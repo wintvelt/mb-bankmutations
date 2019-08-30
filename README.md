@@ -17,6 +17,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "paypal_special": false,
         "official_date": { "system" : true, "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
         "official_balance": { "field": "Saldo", "last": true },
+        "identifier": null,
         "details": {
             "date": { "field": "Datum", "formatFrom": "dd/mm/yyyy", "formatTo": "yyyy-mm-dd" },
             "valutation_date": "Valuta",

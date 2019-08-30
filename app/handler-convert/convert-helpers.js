@@ -110,7 +110,7 @@ const makeFirstLast = (config, csvArr, errors) => {
     for (const key in config) {
         if (config.hasOwnProperty(key)) {
             const fieldConfig = config[key];
-            if (fieldConfig.last || fieldConfig.first) {
+            if (fieldConfig && (fieldConfig.last || fieldConfig.first)) {
                 const rowIndex = (fieldConfig.first) ? 1 : csvArr.length - 1;
                 if (!fieldConfig.field) throw new Error('invalid first/last config');
                 const index = headers.indexOf(fieldConfig.field);
@@ -122,10 +122,34 @@ const makeFirstLast = (config, csvArr, errors) => {
             }
         }
     }
-
     return [outObj, newErrors];
 }
 
+exports.checkIdentifier = (config, csvArr, account, errors) => {
+    const headers = csvArr[0];
+    const field = (config.identifier)? (config.identifier.field) ? config.identifier.field : config.identifier : null;
+    // if not specified in config, then we're good
+    if (!field) return errors;
+    const idIdx = headers.indexOf(field);
+    // add error if field not found in csv
+    if (idIdx === -1) {
+        const newError = { field: 'identifier', error: `veld ${field} niet gevonden in csv` }
+        return addFieldError(newError, errors);
+    }
+    const cleanStr = str => {
+        if (typeof str !== 'string') return '';
+        return str.toLowerCase().replace(/\s/g, '');
+    }
+    const cleanIdentifier = cleanStr(account.identifier);
+    const idInCsv = csvArr.slice(1).filter(row => {
+        return (cleanStr(row[idIdx]) === cleanIdentifier)
+    });
+    if (idInCsv.length === 0) {
+        const newError = { field: 'identifier', error: `csv mist waarde "${account.identifier}" in veld ${field}` }
+        return addFieldError(newError, errors);
+    }
+    return errors;
+}
 
 // very basic helpers
 const initCaps = (str) => {
@@ -173,7 +197,7 @@ const objFromArr = (arr) => {
 }
 
 // adds an error { field, value } to a list { field, [values] }
-exports.addError = (newError, oldErrors) => {
+const addError = (newError, oldErrors) => {
     let outErrors = {};
     const newKey = Object.keys(newError)[0];
     if (!oldErrors) {
@@ -228,3 +252,4 @@ exports.objFromArr = objFromArr;
 exports.makeSystemFields = makeSystemFields;
 exports.makeFirstLast = makeFirstLast;
 exports.addFieldError = addFieldError;
+exports.addError = addError;

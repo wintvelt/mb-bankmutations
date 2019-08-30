@@ -2,7 +2,7 @@ const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
 const { putPromise, getPromise } = require('../handler-files/s3functions');
 const { makeDetails, makeSystemFields, makeFirstLast, addFieldError,
-    objFromArr, arrayToCSV, addError, handleMbRes } = require('./convert-helpers');
+    objFromArr, arrayToCSV, addError, handleMbRes, checkIdentifier } = require('./convert-helpers');
 const { cleanPaypal } = require('./convert-helpers-paypal');
 
 const { validate } = require('../handler-config/config-helpers');
@@ -16,11 +16,11 @@ exports.convertHandler = function (event) {
     if (pathParams.length < 3) return response(403, 'invalid path');
 
     return checkAccount(pathParams[2], auth)
-        .then(() => convertSwitchHandler(event))
+        .then((account) => convertSwitchHandler(event, account))
         .catch(err => response(403, err.message))
 }
 
-const convertSwitchHandler = (event) => {
+const convertSwitchHandler = (event, account) => {
     console.log('start conversion');
     const pathParams = event.path.split('/');
     const accountID = pathParams[2];
@@ -40,7 +40,7 @@ const convertSwitchHandler = (event) => {
             ])
                 .then(([config, csv_content]) => {
                     console.log('got config');
-                    let errors = null;
+                    let errors = null; // NB ERRORS IS A MUTABLE VARIABLE
                     if (Array.isArray(config)) throw new Error('missing config file');
                     if (!filename[1] || filename[1].toLowerCase() !== 'csv') {
                         errors = addError({ csv_read_errors: 'bestandsnaam is niet .csv' }, errors)
@@ -82,6 +82,8 @@ const convertSwitchHandler = (event) => {
                     reqFieldErrors.forEach(error => {
                         errors = addFieldError(error, errors);
                     });
+                    console.log('check (optional) identifier field in column');
+                    errors = checkIdentifier(config, csv, account, errors);
                     let systemFields, detailsArr, firstLastFields;
                     console.log('check and fill system fields');
                     [systemFields, errors] = makeSystemFields(config, filename[0], accountID, errors);
