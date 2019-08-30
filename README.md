@@ -100,6 +100,8 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
         "moneybird_error": "(message from moneybird)"
     }}
     ```
+* `DELETE /convert/[account id]` to delete a file (csv and json) + summary
+    * body is required with `{ "csv_filename" : "....csv" }` (filename without path)
 
 `/files/[account id][/filename]` file management for converted files/ valid json files, in public bucket
 * `GET` with filename returns file, without filename will return list of file summaries, in json format
@@ -119,7 +121,7 @@ Specifically for KBC, because their MT940 output s*cks, and the only decent expo
     * request header must contain auth Bearer token
     * body needs to be string to save (could be stringified json)
 
-* `DELETE` only valid with filename, body should have { filename } too. (filename without path)
+* `DELETE` only valid with filename, body should have { filename }. (filename without path)
 
 `/send`to send a file to moneybird
 * `POST send/[account id]`

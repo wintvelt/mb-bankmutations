@@ -1,6 +1,6 @@
 const { response } = require('../helpers/helpers-api');
 const { checkAccount, patchObj } = require('../helpers/helpers');
-const { putPromise, getPromise } = require('../handler-files/s3functions');
+const { putPromise, getPromise, deletePromise } = require('../handler-files/s3functions');
 const { makeDetails, makeSystemFields, makeFirstLast, addFieldError,
     objFromArr, arrayToCSV, addError, handleMbRes, checkIdentifier } = require('./convert-helpers');
 const { cleanPaypal } = require('./convert-helpers-paypal');
@@ -153,8 +153,44 @@ const convertSwitchHandler = (event, account) => {
                 })
                 .catch(err => response(500, err.message));
 
+        case 'DELETE':
+            // check filename
+            if (!event.body || !event.body.csv_filename) return response(403, 'bad request');
+            const jsonFilename = fullFilename.split('.')[0] + '.json';
+            const sumFilename = `${accountID}/'summary-${event.body.csv_filename}.json`;
+
+            // get summaries
+            return getPromise({ Bucket: privateBucket, Key: sumFilename }).catch(_ => [])
+                .then(sumFile => {
+                    // update summaries with 'deleted' flag (to preserve link to moneybird file)
+                    const newSum = sumFile.map(it => {
+                        return (it.filename === jsonFilename) ?
+                            { ...it, deleted: true }
+                            : it
+                    })
+                    // delete files and post summaries
+                    return Promise.all([
+                        (sum.length > 0) ?
+                            putPromise({
+                                Bucket: privateBucket,
+                                Key: sumFilename,
+                                Body: JSON.stringify(newSum),
+                                ContentType: 'application/json'
+                            }) : '',
+                        deletePromise({
+                            Bucket: privateBucket,
+                            Key: fullFilename
+                        }),
+                        deletePromise({
+                            Bucket: privateBucket,
+                            Key: jsonFilename
+                        })
+                    ]);
+                })
+                .then(_ => response(200, 'ok'))
+                .catch(err => response(500, err.message));
+
         default:
             return response(405, 'not allowed');
-            break;
     }
 }

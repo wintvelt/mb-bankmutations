@@ -27,7 +27,9 @@ exports.sumsOf = function (account) {
         .then(dataList => {
             const rawList = filterFiles(dataList[0], account);
             const cleanList = combineSame(rawList);
-            const summaries = dataList[1].map(it => Object.assign({}, it, { filename : it.filename.split('.')[0] }));
+            const summaries = dataList[1]
+                .filter(it => (!it.deleted))
+                .map(it => Object.assign({}, it, { filename : it.filename.split('.')[0] }));
             const outObj = patchObj(cleanList, summaries, "filename");
             return outObj;
         })
