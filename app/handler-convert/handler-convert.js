@@ -156,13 +156,15 @@ const convertSwitchHandler = (event, account) => {
         case 'DELETE':
             // check filename
             if (!event.body || !event.body.csv_filename) return response(403, 'bad request');
-            const jsonFilename = fullFilename.split('.')[0] + '.json';
-            const sumFilename = `${accountID}/'summary-${event.body.csv_filename}.json`;
+            const csvFilename = `${accountID}/${event.body.csv_filename}`;
+            const jsonFilename = csvFilename.split('.')[0] + '.json';
+            const sumFilename = `${accountID}/summary-${accountID}.json`;
 
             // get summaries
             return getPromise({ Bucket: privateBucket, Key: sumFilename }).catch(_ => [])
                 .then(sumFile => {
                     // update summaries with 'deleted' flag (to preserve link to moneybird file)
+                    console.log(typeof sumFile);
                     const newSum = sumFile.map(it => {
                         return (it.filename === jsonFilename) ?
                             { ...it, deleted: true }
@@ -170,7 +172,7 @@ const convertSwitchHandler = (event, account) => {
                     })
                     // delete files and post summaries
                     return Promise.all([
-                        (sum.length > 0) ?
+                        (sumFile.length > 0) ?
                             putPromise({
                                 Bucket: privateBucket,
                                 Key: sumFilename,
@@ -179,7 +181,7 @@ const convertSwitchHandler = (event, account) => {
                             }) : '',
                         deletePromise({
                             Bucket: privateBucket,
-                            Key: fullFilename
+                            Key: csvFilename
                         }),
                         deletePromise({
                             Bucket: privateBucket,
