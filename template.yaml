@@ -43,6 +43,11 @@ Resources:
           Properties:
             Path: /convert/{path}
             Method: any
+        Download:
+          Type: Api
+          Properties:
+            Path: /download/{path+}
+            Method: get
         Send:
           Type: Api
           Properties:
@@ -62,6 +67,9 @@ Outputs:
   ConvertApi:
     Description: "API Gateway endpoint URL for Convert function of Bank"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/convert/"
+  DownloadApi:
+    Description: "API Gateway endpoint URL for to get files for download"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/download/"
   SendApi:
     Description: "API Gateway endpoint URL for Send function of Bank"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/send/"
