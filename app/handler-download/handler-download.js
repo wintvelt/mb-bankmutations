@@ -1,7 +1,7 @@
 // Read and write files and folders on S3
 const { privateBucket } = require('../SECRETS');
 const { checkAccount } = require('../helpers/helpers');
-const { getPromise } = require('./s3functions');
+const { getPromise } = require('../handler-files/s3functions');
 const { response } = require('../helpers/helpers-api');
 
 exports.downloadHandler = function (event) {
