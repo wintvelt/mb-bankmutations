@@ -51,7 +51,8 @@ const sendSwitchHandler = function (event) {
                             filename,
                             last_sent: nowDate(),
                             send_result_ok: (mbData.id) ? true : false,
-                            id: mbData.id
+                            id: mbData.id,
+                            deleted: false
                         }
                         const newSummaries = patchObj(oldSummaries, [newSummary], 'filename');
                         const postParams = {
