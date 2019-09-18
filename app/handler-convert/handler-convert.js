@@ -68,7 +68,7 @@ const convertSwitchHandler = (event, account) => {
                             if (row.length > arr[0].length) {
                                 errors = addError({ csv_read_errors: `regels lijken te veel velden te hebben` }, errors)
                             }
-                            return row;
+                            return row.map(cell => cell.replace(/[\u{0800}-\u{FFFF}]/gu,"?")); // replace weird characters in csv
                         });
                     }
                     if (errors) {
