@@ -54,11 +54,12 @@ const patchObj = (original, update, id = 'id') => {
 exports.nowDate = () => {
     const now = new Date();
     const month = now.getMonth() + 1;
+    const date = now.getDate();
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
     const twoStr = n => (n < 10) ? '0' + n : n;
-    return now.getFullYear() + '-' + twoStr(month) + '-' + now.getDate()
+    return now.getFullYear() + '-' + twoStr(month) + '-' + twoStr(date)
         + 'T' + twoStr(hours) + ':' + twoStr(minutes) + ':' + twoStr(seconds) + '.000Z';
 }
 

@@ -147,7 +147,7 @@ In the private bucket, a folder is made for each account id. In these folders:
     [
         { 
             "filename": "[something].json",
-            "last_sent": "20190802",
+            "last_sent": "2019-08-02",
             "send_result_ok": true,
             "id": "123456"
         }
