@@ -8,9 +8,12 @@ exports.downloadHandler = function (event) {
     const auth = event.headers.Authorization;
     const pathParams = event.path.split('/');
 
-    return checkAccount(pathParams[2], auth)
-        .then(() => downloadSwitchHandler(event))
-        .catch(err => response(403, err.message))
+    return downloadSwitchHandler(event);
+
+    // TODO: Add check later (after fixing MB manager to also send Auth header)
+    // return checkAccount(pathParams[2], auth)
+    //     .then(() => downloadSwitchHandler(event))
+    //     .catch(err => response(403, err.message))
 }
 
 const downloadSwitchHandler = function (event) {
