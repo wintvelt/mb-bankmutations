@@ -10,6 +10,10 @@ const { privateBucket } = require('../SECRETS');
 const { sendHandler } = require('../handler-send/handler-send');
 const { emptyMapping } = require('../handler-config/config-helpers');
 
+// helpers to remove funny characters
+const combining = /[\u0300-\u036F]/g; 
+const noAccent = str => typeof str === 'string'? str.normalize('NFKD').replace(combining, '') : str;
+
 exports.convertHandler = function (event) {
     const auth = event.headers.Authorization;
     const pathParams = event.path.split('/');
@@ -71,6 +75,7 @@ const convertSwitchHandler = (event, account) => {
                             return row.map(cell => cell.replace(/[\u{0800}-\u{FFFF}]/gu,"?")); // replace weird characters in csv
                         });
                     }
+                    csv = csv.map(row => row.map(noAccent)); // replace accented characters if needed
                     if (errors) {
                         console.log('er zijn andere errors');
                         return errors; // abort if csv cannot be read
